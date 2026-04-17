@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createCreateEventCommand } from '../create-event.command';
 import type { CreateEventInput } from '../create-event.command';
-import type { CommunityRepository } from '../../../repositories/community.repository';
+import type { CommunityRepository } from '@community/repositories/community.repository';
 import type { EventRepository } from '../../../repositories/event.repository';
 import { createEventId, createCommunityId, createAccountId } from '@shared/schemas/id-factories';
 
@@ -41,6 +41,8 @@ const makeCommunityRepository = (): CommunityRepository => ({
 const makeEventRepository = (): EventRepository => ({
   save: vi.fn().mockResolvedValue(undefined),
   findById: vi.fn().mockResolvedValue(null),
+  findByStatus: vi.fn().mockResolvedValue([]),
+  findUpcoming: vi.fn().mockResolvedValue([]),
 });
 
 describe('CreateEventCommand', () => {

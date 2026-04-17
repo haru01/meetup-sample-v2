@@ -2,7 +2,6 @@ import type { PrismaClient } from '@prisma/client';
 import type { RequestHandler } from 'express';
 import { PrismaCommunityRepository } from './repositories/prisma-community.repository';
 import { PrismaCommunityMemberRepository } from './repositories/prisma-community-member.repository';
-import { PrismaEventRepository } from './repositories/prisma-event.repository';
 import { InMemoryEventBus } from '@shared/event-bus';
 import {
   createCreateCommunityCommand,
@@ -24,10 +23,6 @@ import {
   createRejectMemberCommand,
   type RejectMemberCommand,
 } from './usecases/commands/reject-member.command';
-import {
-  createCreateEventCommand,
-  type CreateEventCommand,
-} from './usecases/commands/create-event.command';
 import {
   createGetCommunityQuery,
   type GetCommunityQuery,
@@ -58,12 +53,6 @@ export interface CommunityDependencies {
   readonly listCommunitiesQuery: ListCommunitiesQuery;
 }
 
-export interface EventDependencies {
-  readonly createEventCommand: CreateEventCommand;
-  readonly requireCommunityRole: RequestHandler;
-  readonly prisma: PrismaClient;
-}
-
 export interface MemberDependencies {
   readonly joinCommunityCommand: JoinCommunityCommand;
   readonly leaveCommunityCommand: LeaveCommunityCommand;
@@ -80,7 +69,6 @@ export interface MemberDependencies {
 export function createCommunityDependencies(prisma: PrismaClient): {
   community: CommunityDependencies;
   member: MemberDependencies;
-  event: EventDependencies;
 } {
   const communityRepository = new PrismaCommunityRepository(prisma);
   const communityMemberRepository = new PrismaCommunityMemberRepository(prisma);
@@ -120,18 +108,6 @@ export function createCommunityDependencies(prisma: PrismaClient): {
         CommunityMemberRole.OWNER,
         CommunityMemberRole.ADMIN
       ),
-    },
-    event: {
-      createEventCommand: createCreateEventCommand(
-        communityRepository,
-        new PrismaEventRepository(prisma)
-      ),
-      requireCommunityRole: createRequireCommunityRole(
-        communityMemberRepository,
-        CommunityMemberRole.OWNER,
-        CommunityMemberRole.ADMIN
-      ),
-      prisma,
     },
   };
 }

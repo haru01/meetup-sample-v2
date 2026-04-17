@@ -2,12 +2,20 @@ import type { PrismaClient } from '@prisma/client';
 import type { Router } from 'express';
 import type { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
+import { createRequireCommunityRole } from '@shared/middleware/community-role.middleware';
+import { PrismaCommunityRepository } from '@community/repositories/prisma-community.repository';
+import { PrismaCommunityMemberRepository } from '@community/repositories/prisma-community-member.repository';
+import { CommunityMemberRole } from '@community/models/schemas/member.schema';
 import { PrismaEventRepository } from './repositories/prisma-event.repository';
 import {
   PrismaNotificationRepository,
   type NotificationRepository,
   type NotificationRecord,
 } from './repositories/notification.repository';
+import {
+  createCreateEventCommand,
+  type CreateEventCommand,
+} from './usecases/commands/create-event.command';
 import {
   createPublishEventCommand,
   type PublishEventCommand,
@@ -28,11 +36,9 @@ import {
   createListPublishedEventsQuery,
   type ListPublishedEventsQuery,
 } from './usecases/queries/list-published-events.query';
-import {
-  createGetEventQuery,
-  type GetEventQuery,
-} from './usecases/queries/get-event.query';
+import { createGetEventQuery, type GetEventQuery } from './usecases/queries/get-event.query';
 import { createEventRouter } from './controllers/event.controller';
+import { createCommunityEventRouter } from './controllers/community-event.controller';
 import { createSchedulerRouter } from './controllers/scheduler.controller';
 
 // ============================================================
@@ -42,11 +48,13 @@ import { createSchedulerRouter } from './controllers/scheduler.controller';
 export interface EventContextDependencies {
   readonly listPublishedEventsQuery: ListPublishedEventsQuery;
   readonly getEventQuery: GetEventQuery;
+  readonly createEventCommand: CreateEventCommand;
   readonly publishEventCommand: PublishEventCommand;
   readonly updateEventCommand: UpdateEventCommand;
   readonly closeEventCommand: CloseEventCommand;
   readonly cancelEventCommand: CancelEventCommand;
   readonly eventRouter: Router;
+  readonly communityEventRouter: Router;
   readonly schedulerRouter: Router;
 }
 
@@ -56,9 +64,12 @@ export function createEventDependencies(
 ): EventContextDependencies {
   const eventRepository = new PrismaEventRepository(prisma);
   const notificationRepository = new PrismaNotificationRepository(prisma);
+  const communityRepository = new PrismaCommunityRepository(prisma);
+  const communityMemberRepository = new PrismaCommunityMemberRepository(prisma);
 
   const listPublishedEventsQuery = createListPublishedEventsQuery(eventRepository);
   const getEventQuery = createGetEventQuery(eventRepository);
+  const createEventCommand = createCreateEventCommand(communityRepository, eventRepository);
   const publishEventCommand = createPublishEventCommand(eventRepository, eventBus);
   const updateEventCommand = createUpdateEventCommand(eventRepository);
   const closeEventCommand = createCloseEventCommand(eventRepository, eventBus);
@@ -74,16 +85,27 @@ export function createEventDependencies(
     closeEventCommand,
     cancelEventCommand,
   });
+  const communityEventRouter = createCommunityEventRouter({
+    createEventCommand,
+    requireCommunityRole: createRequireCommunityRole(
+      communityMemberRepository,
+      CommunityMemberRole.OWNER,
+      CommunityMemberRole.ADMIN
+    ),
+    prisma,
+  });
   const schedulerRouter = createSchedulerRouter({ eventRepository, eventBus });
 
   return {
     listPublishedEventsQuery,
     getEventQuery,
+    createEventCommand,
     publishEventCommand,
     updateEventCommand,
     closeEventCommand,
     cancelEventCommand,
     eventRouter,
+    communityEventRouter,
     schedulerRouter,
   };
 }

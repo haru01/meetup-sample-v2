@@ -11,7 +11,6 @@ import { prisma as defaultPrisma } from './infrastructure/prisma';
 import { createAuthRouter } from './auth/controllers/auth.controller';
 import { createCommunityRouter } from './community/controllers/community.controller';
 import { createMemberRouter } from './community/controllers/member.controller';
-import { createEventRouter as createCommunityEventRouter } from './community/controllers/event.controller';
 import { createAuthDependencies } from './auth/composition';
 import { createCommunityDependencies } from './community/composition';
 import { createEventDependencies } from './event/composition';
@@ -21,7 +20,6 @@ import { createCheckinDependencies } from './checkin/composition';
 import './auth/controllers/auth-openapi';
 import './community/controllers/community-openapi';
 import './community/controllers/member-openapi';
-import './community/controllers/event-openapi';
 import './event/controllers/event-openapi';
 import './participation/controllers/participation-openapi';
 import './checkin/controllers/checkin-openapi';
@@ -76,8 +74,8 @@ export function createApp(prismaClient: PrismaClient = defaultPrisma): Applicati
   // Member routes (nested under communities)
   application.use('/communities/:id/members', createMemberRouter(communityDeps.member));
 
-  // Community event routes (CreateEvent: DRAFT 作成)
-  application.use('/communities/:id/events', createCommunityEventRouter(communityDeps.event));
+  // Community event routes (CreateEvent: DRAFT 作成) — event BC が担う
+  application.use('/communities/:id/events', eventDeps.communityEventRouter);
 
   // Event context routes (Publish / Update / Close / Cancel / List)
   application.use('/events', eventDeps.eventRouter);
