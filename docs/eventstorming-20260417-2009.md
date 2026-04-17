@@ -2,7 +2,8 @@
 
 - Session: eventstorming-20260417-2009
 - Domain: ミートアップイベント
-- Status: **フェーズ6完了**
+- Status: **フェーズ6完了**（スキルの整合性チェック＋DML 出力フェーズまで完了）
+- Scope: ドメインモデリングのみ。実装着手は別トラック
 - Goal: 要件整理（仕様書・バックログ作成の前処理）
 
 ---
@@ -63,8 +64,8 @@ flow:
 :::diagram-svg event_flow
 title: 代替シナリオA — 定員超過・キャンセル待ち繰り上がり
 flow:
-|participation|: 定員超過時の申し込み（参加者起動）
-  @参加者 > ?イベント詳細 > !キャンセル待ちに登録する > [キャンセル待ちに登録された] >>
+|participation|: 定員超過時の申し込み（参加者起動・自動キャンセル待ち）
+  @参加者 > ?イベント詳細 > !参加を申し込む > [参加申し込みが完了した] >> $定員超過自動キャンセル待ち > !キャンセル待ちに登録する > [キャンセル待ちに登録された] >>
 |participation|: 確定済み参加者がキャンセルする（EVENTUAL: 参加者起動）
   @参加者 > !参加をキャンセルする > [参加がキャンセルされた] >>
 |participation|: キャンセル待ち繰り上がり自動処理（EVENTUAL: ポリシー起動）
@@ -103,21 +104,25 @@ flow:
 
 ### community（コミュニティ）
 - 境界の理由: コミュニティ固有の識別・メンバーシップ管理はイベント運営と独立して変化する
+- 含む集約: Community
 - 含むシナリオ: 主催者がコミュニティを作成する、メンバーがコミュニティに参加する
 - LANGUAGE: `Community` — このBCでの意味: 同じ興味・目的を持つメンバーが集まるグループ
 
 ### event（イベント）
 - 境界の理由: イベントの状態（DRAFT/PUBLISHED/CLOSED/CANCELLED）と定員管理は単一の責務として凝集できる
+- 含む集約: Event
 - 含むシナリオ: 主催者がイベントを作成する、公開する、編集する、クローズする、中止する
 - LANGUAGE: `Event` — このBCでの意味: 主催者が企画・運営するミートアップイベント本体
 
 ### participation（参加管理）
-- 境界の理由: `Event` という言葉がイベント本体（event BC）と申し込みエントリー（participation BC）で意味が異なる → BC境界
+- 境界の理由: イベント本体（event BC の Event）とは別に、申し込み1件ごとの状態遷移（APPLIED/APPROVED/WAITLISTED/CANCELLED）を独立して管理する必要がある
+- 含む集約: Participation
 - 含むシナリオ: 参加者が申し込む、主催者が一括承認する、参加者がキャンセルする
-- LANGUAGE: `Event` — このBCでの意味: 参加申し込みの対象となるエントリー（≠ event BCのEvent）
+- LANGUAGE: `Participation` — このBCでの意味: 参加申し込みエントリー（event BC の Event に対する申込 1 件）
 
 ### checkin（チェックイン）
 - 境界の理由: 当日の来場確認は参加管理・イベント管理と独立したライフサイクルを持つ（当日限定・物理的な操作）
+- 含む集約: CheckIn
 - 含むシナリオ: 参加者がチェックインする
 - LANGUAGE: `CheckIn` — このBCでの意味: 当日の来場確認・出席記録
 
@@ -213,6 +218,12 @@ flow:
 - **目的**: 中止通知の対象を承認済み＋キャンセル待ちで横断取得
 - **ソース**: Participation（participation BC）
 - **算出**: status IN (APPROVED, WAITLISTED) でフィルタ
+
+### NextWaitlistedParticipation（次のキャンセル待ち先頭）
+- **利用者**: `PromoteFromWaitlist` ポリシー
+- **目的**: キャンセル待ちの先頭を取得して繰り上げ対象を決める
+- **ソース**: Participation（participation BC）
+- **算出**: status=WAITLISTED でフィルタ、登録日時昇順の先頭 1 件
 
 ---
 
@@ -358,7 +369,8 @@ POLICY NotifyEventCancelled
   TX       EVENTUAL
   EVT      CancellationNotificationSent
 
-# イベント前日にスケジューラーが EventDateApproached を発火 → 全承認済み参加者にリマインダー送信
+# スケジューラーがイベント前日に EventDateApproached を発火 → 全承認済み参加者にリマインダー送信
+# 発火源は event BC 外のスケジューラー基盤（本モデルではシステムトリガー扱い）
 POLICY SendReminder
   TRIGGER  EventDateApproached
   QRY      AllApprovedParticipations
@@ -456,4 +468,4 @@ POLICY NotifyOrganizerOnCancel
 
 - フェーズ: **完了（フェーズ6）**
 - 全ホットスポット・クエスチョンクローズ済み（H1〜H7、Q1〜Q2）
-- 次のアクション: バックログ化・API設計・実装着手
+- 次のアクション: 実装タスクは本ドキュメントを正として別途バックログ化

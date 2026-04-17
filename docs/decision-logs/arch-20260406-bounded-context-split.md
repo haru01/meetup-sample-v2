@@ -2,7 +2,13 @@
 
 日付: 2026-04-06
 種類: arch
-ステータス: 承認済み
+ステータス: **Superseded** by [docs/eventstorming-20260417-2009.md](../eventstorming-20260417-2009.md)（4 BC 構成）
+
+> **注記 (2026-04-17)**: 本 ADR は当初 community/participation の 2 分割を採用したが、
+> 2026-04-17 の EventStorming セッション結果により、現在は
+> `community` / `event` / `participation` / `checkin` の 4 BC 構成に発展している。
+> 最新のドメイン構成は eventstorming-20260417-2009.md を参照。
+> 本 ADR は履歴として保持する。
 
 ## コンテキスト
 
