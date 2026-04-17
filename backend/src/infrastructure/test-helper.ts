@@ -49,6 +49,9 @@ export async function clearAuthTables(prisma: PrismaClient): Promise<void> {
  */
 export async function clearMeetupTables(prisma: PrismaClient): Promise<void> {
   await prisma.$transaction([
+    prisma.checkIn.deleteMany(),
+    prisma.notification.deleteMany(),
+    prisma.participation.deleteMany(),
     prisma.event.deleteMany(),
     prisma.communityMember.deleteMany(),
     prisma.community.deleteMany(),
