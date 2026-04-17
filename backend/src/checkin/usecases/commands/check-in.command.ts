@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { PrismaClient } from '@prisma/client';
 import { ok, err, type Result } from '@shared/result';
+import type { ParticipationRepository } from '@participation/repositories/participation.repository';
+import { ParticipationStatus } from '@participation/models/schemas/participation.schema';
 import type { CheckIn, CheckInId } from '../../models/checkin';
 import { createCheckIn } from '../../models/checkin';
 import type { CheckInRepository } from '../../repositories/checkin.repository';
@@ -39,19 +40,17 @@ export type CheckInCommand = (
  * 同一 Participation への重複チェックインはアプリレベルで拒否する。
  */
 export function createCheckInCommand(
-  prisma: PrismaClient,
+  participationRepository: ParticipationRepository,
   checkInRepository: CheckInRepository
 ): CheckInCommand {
   return async ({ eventId, requesterId }) => {
-    const participation = await prisma.participation.findFirst({
-      where: { eventId, accountId: requesterId },
-    });
+    const participation = await participationRepository.findByEventAndAccount(eventId, requesterId);
 
     if (!participation) {
       return err({ type: 'ParticipationNotFound' });
     }
 
-    if (participation.status !== 'APPROVED') {
+    if (participation.status !== ParticipationStatus.APPROVED) {
       return err({ type: 'ParticipationNotApproved' });
     }
 

@@ -1,7 +1,8 @@
-import type { PrismaClient } from '@prisma/client';
 import { ok, err, type Result } from '@shared/result';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
+import type { EventId } from '@shared/schemas/common';
+import type { EventRepository } from '@event/repositories/event.repository';
 import {
   approveParticipation,
   type Participation,
@@ -31,15 +32,12 @@ export type ApproveParticipationsCommand = (
  * 主催者（event.createdBy）のみ実行可。
  */
 export function createApproveParticipationsCommand(
-  prisma: PrismaClient,
+  eventRepository: EventRepository,
   participationRepository: ParticipationRepository,
   eventBus: InMemoryEventBus<MeetupDomainEvent>
 ): ApproveParticipationsCommand {
   return async (command) => {
-    const event = await prisma.event.findUnique({
-      where: { id: command.eventId },
-      select: { id: true, createdBy: true },
-    });
+    const event = await eventRepository.findById(command.eventId as EventId);
     if (!event) {
       return err({ type: 'EventNotFound' });
     }

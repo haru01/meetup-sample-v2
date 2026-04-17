@@ -22,7 +22,10 @@
       "@/*": ["src/*"],
       "@shared/*": ["src/shared/*"],
       "@auth/*": ["src/auth/*"],
-      "@community/*": ["src/community/*"]
+      "@community/*": ["src/community/*"],
+      "@event/*": ["src/event/*"],
+      "@participation/*": ["src/participation/*"],
+      "@checkin/*": ["src/checkin/*"]
     }
   },
   "include": ["src"],

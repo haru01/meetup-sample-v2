@@ -1,6 +1,10 @@
 import type { PrismaClient, Prisma } from '@prisma/client';
 import { ParticipationStatus as PrismaParticipationStatus } from '@prisma/client';
-import type { Participation, ParticipationId } from '../models/participation';
+import {
+  waitlistParticipation,
+  type Participation,
+  type ParticipationId,
+} from '../models/participation';
 import type { ParticipationStatus } from '../models/schemas/participation.schema';
 import type { ParticipationRepository } from './participation.repository';
 
@@ -25,10 +29,7 @@ export class PrismaParticipationRepository implements ParticipationRepository {
     return record ? this.toEntity(record) : null;
   }
 
-  async findByEventAndAccount(
-    eventId: string,
-    accountId: string
-  ): Promise<Participation | null> {
+  async findByEventAndAccount(eventId: string, accountId: string): Promise<Participation | null> {
     const record = await this.prisma.participation.findUnique({
       where: { eventId_accountId: { eventId, accountId } },
     });
@@ -126,11 +127,29 @@ export class PrismaParticipationRepository implements ParticipationRepository {
     );
   }
 
-  // ============================================================
-  // トランザクション対応ヘルパー (apply-for-event で使用)
-  // ============================================================
+  /**
+   * AutoWaitlistIfFull ポリシー: initial を保存し、定員を超えていれば WAITLISTED に更新する。
+   * トランザクション境界は本メソッド内部に閉じる。
+   */
+  async applyWithCapacityCheck(initial: Participation, capacity: number): Promise<Participation> {
+    return this.prisma.$transaction(async (tx) => {
+      await this.upsertWithTx(tx, initial);
+      const approvedCount = await tx.participation.count({
+        where: { eventId: initial.eventId, status: PrismaParticipationStatus.APPROVED },
+      });
+      if (approvedCount < capacity) {
+        return initial;
+      }
+      const waitlisted = waitlistParticipation(initial);
+      if (!waitlisted.ok) {
+        return initial;
+      }
+      await this.upsertWithTx(tx, waitlisted.value);
+      return waitlisted.value;
+    });
+  }
 
-  async saveWithTx(
+  private async upsertWithTx(
     tx: Prisma.TransactionClient,
     participation: Participation
   ): Promise<void> {
@@ -148,15 +167,6 @@ export class PrismaParticipationRepository implements ParticipationRepository {
         status: participation.status as PrismaParticipationStatus,
         updatedAt: participation.updatedAt,
       },
-    });
-  }
-
-  async countApprovedWithTx(
-    tx: Prisma.TransactionClient,
-    eventId: string
-  ): Promise<number> {
-    return tx.participation.count({
-      where: { eventId, status: PrismaParticipationStatus.APPROVED },
     });
   }
 

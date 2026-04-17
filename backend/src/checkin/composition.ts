@@ -2,11 +2,9 @@ import type { PrismaClient } from '@prisma/client';
 import { Router } from 'express';
 import type { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
+import { PrismaParticipationRepository } from '@participation/repositories/prisma-participation.repository';
 import { PrismaCheckInRepository } from './repositories/prisma-checkin.repository';
-import {
-  createCheckInCommand,
-  type CheckInCommand,
-} from './usecases/commands/check-in.command';
+import { createCheckInCommand, type CheckInCommand } from './usecases/commands/check-in.command';
 import {
   createListCheckInsQuery,
   type ListCheckInsQuery,
@@ -35,8 +33,9 @@ export function createCheckinDependencies(
   _eventBus: InMemoryEventBus<MeetupDomainEvent>
 ): CheckInDependencies {
   const checkInRepository = new PrismaCheckInRepository(prisma);
+  const participationRepository = new PrismaParticipationRepository(prisma);
 
-  const checkInCommand = createCheckInCommand(prisma, checkInRepository);
+  const checkInCommand = createCheckInCommand(participationRepository, checkInRepository);
   const listCheckInsQuery = createListCheckInsQuery(prisma, checkInRepository);
 
   const checkinRouter = createCheckInRouter({ checkInCommand, listCheckInsQuery });

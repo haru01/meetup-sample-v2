@@ -37,6 +37,9 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, 'src/shared'),
       '@auth': path.resolve(__dirname, 'src/auth'),
       '@community': path.resolve(__dirname, 'src/community'),
+      '@event': path.resolve(__dirname, 'src/event'),
+      '@participation': path.resolve(__dirname, 'src/participation'),
+      '@checkin': path.resolve(__dirname, 'src/checkin'),
     },
   },
 });

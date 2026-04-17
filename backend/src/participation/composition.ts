@@ -3,6 +3,7 @@ import { NotificationType } from '@prisma/client';
 import type { Router } from 'express';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
+import { PrismaEventRepository } from '@event/repositories/prisma-event.repository';
 import { PrismaParticipationRepository } from './repositories/prisma-participation.repository';
 import {
   PrismaNotificationRepository,
@@ -67,15 +68,16 @@ export function createParticipationDependencies(
 ): ParticipationDependencies {
   const participationRepository = new PrismaParticipationRepository(prisma);
   const notificationRepository: NotificationRepository = new PrismaNotificationRepository(prisma);
+  const eventRepository = new PrismaEventRepository(prisma);
 
   // --- Usecases ---
   const applyForEventCommand = createApplyForEventCommand(
-    prisma,
+    eventRepository,
     participationRepository,
     eventBus
   );
   const approveParticipationsCommand = createApproveParticipationsCommand(
-    prisma,
+    eventRepository,
     participationRepository,
     eventBus
   );

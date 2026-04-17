@@ -1,15 +1,12 @@
-import type { PrismaClient } from '@prisma/client';
-import { EventStatus } from '@prisma/client';
 import { ok, err, type Result } from '@shared/result';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
-import {
-  createParticipationId,
-  waitlistParticipation,
-  type Participation,
-} from '../../models/participation';
+import type { EventId } from '@shared/schemas/common';
+import type { EventRepository } from '@event/repositories/event.repository';
+import { EventStatus } from '@event/models/schemas/event.schema';
+import { createParticipationId, type Participation } from '../../models/participation';
 import { ParticipationStatus } from '../../models/schemas/participation.schema';
-import type { PrismaParticipationRepository } from '../../repositories/prisma-participation.repository';
+import type { ParticipationRepository } from '../../repositories/participation.repository';
 import type { ApplyForEventError } from '../../errors/participation-errors';
 
 // ============================================================
@@ -29,19 +26,16 @@ export type ApplyForEventCommand = (
  * イベント参加申込ユースケース
  *
  * Event が PUBLISHED であることを確認し、同一アカウントの既存申込がなければ
- * APPLIED で保存する。SAME TX 内で定員チェックを行い、既に定員充足なら
- * その場で WAITLISTED に更新する（AutoWaitlistIfFull）。
+ * APPLIED で保存する。定員充足済みなら同一トランザクションで WAITLISTED に
+ * 更新する（AutoWaitlistIfFull）。トランザクション境界は Repository に閉じる。
  */
 export function createApplyForEventCommand(
-  prisma: PrismaClient,
-  participationRepository: PrismaParticipationRepository,
+  eventRepository: EventRepository,
+  participationRepository: ParticipationRepository,
   eventBus: InMemoryEventBus<MeetupDomainEvent>
 ): ApplyForEventCommand {
   return async (command) => {
-    const event = await prisma.event.findUnique({
-      where: { id: command.eventId },
-      select: { id: true, status: true, capacity: true },
-    });
+    const event = await eventRepository.findById(command.eventId as EventId);
     if (!event) {
       return err({ type: 'EventNotFound' });
     }
@@ -67,22 +61,7 @@ export function createApplyForEventCommand(
       updatedAt: now,
     };
 
-    const saved = await prisma.$transaction(async (tx) => {
-      await participationRepository.saveWithTx(tx, initial);
-      const approvedCount = await participationRepository.countApprovedWithTx(
-        tx,
-        command.eventId
-      );
-      if (approvedCount >= event.capacity) {
-        const waitlistedResult = waitlistParticipation(initial);
-        if (!waitlistedResult.ok) {
-          return initial;
-        }
-        await participationRepository.saveWithTx(tx, waitlistedResult.value);
-        return waitlistedResult.value;
-      }
-      return initial;
-    });
+    const saved = await participationRepository.applyWithCapacityCheck(initial, event.capacity);
 
     await eventBus.publish({
       type: 'ParticipationApplied',

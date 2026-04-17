@@ -15,4 +15,11 @@ export interface ParticipationRepository {
   findByAccount(accountId: string): Promise<Participation[]>;
   save(participation: Participation): Promise<void>;
   saveAll(participations: Participation[]): Promise<void>;
+
+  /**
+   * AutoWaitlistIfFull ポリシーを同一トランザクション内で適用する。
+   * initial を保存し、APPROVED 件数が capacity を超えていればただちに WAITLISTED に更新する。
+   * トランザクションの境界は実装側 (PrismaParticipationRepository) に閉じ込める。
+   */
+  applyWithCapacityCheck(initial: Participation, capacity: number): Promise<Participation>;
 }
