@@ -13,28 +13,56 @@ module.exports = {
       },
     },
 
-    // 境界づけられたコンテキスト間の直接依存を禁止
+    // ============================================================
+    // BC 間依存ルール
+    //
+    // auth は全 BC から独立（双方向禁止）。
+    // ドメイン BC は Customer-Supplier パターンで
+    //   community ← event ← participation ← checkin
+    // の方向（下流→上流）のみ許可し、逆方向（上流→下流）は禁止する。
+    // ============================================================
+
+    // auth は他 BC から独立（双方向禁止）
     {
-      name: 'no-cross-context-auth-to-community',
+      name: 'no-cross-context-auth-to-domain',
       severity: 'error',
-      comment: 'auth と community は直接依存できません。shared を経由してください',
-      from: {
-        path: '^src/auth/',
-      },
-      to: {
-        path: '^src/community/',
-      },
+      comment: 'auth はドメイン BC に依存できません。shared を経由してください',
+      from: { path: '^src/auth/' },
+      to: { path: '^src/(community|event|participation|checkin)/' },
     },
     {
-      name: 'no-cross-context-community-to-auth',
+      name: 'no-cross-context-domain-to-auth',
       severity: 'error',
-      comment: 'community と auth は直接依存できません。shared を経由してください',
-      from: {
-        path: '^src/community/',
-      },
-      to: {
-        path: '^src/auth/',
-      },
+      comment: 'ドメイン BC は auth に依存できません。shared を経由してください',
+      from: { path: '^src/(community|event|participation|checkin)/' },
+      to: { path: '^src/auth/' },
+    },
+
+    // community は上流 BC。下流 BC (event/participation/checkin) に依存できない
+    {
+      name: 'no-community-to-downstream',
+      severity: 'error',
+      comment: 'community は下流 BC (event/participation/checkin) に依存できません',
+      from: { path: '^src/community/' },
+      to: { path: '^src/(event|participation|checkin)/' },
+    },
+
+    // event は participation/checkin に依存できない（event は participation の上流）
+    {
+      name: 'no-event-to-downstream',
+      severity: 'error',
+      comment: 'event は下流 BC (participation/checkin) に依存できません',
+      from: { path: '^src/event/' },
+      to: { path: '^src/(participation|checkin)/' },
+    },
+
+    // participation は checkin に依存できない（participation は checkin の上流）
+    {
+      name: 'no-participation-to-checkin',
+      severity: 'error',
+      comment: 'participation は checkin に依存できません',
+      from: { path: '^src/participation/' },
+      to: { path: '^src/checkin/' },
     },
 
     // infrastructure から domain への依存禁止（依存性逆転の原則）
