@@ -33,6 +33,10 @@ import {
   type CancelEventCommand,
 } from './usecases/commands/cancel-event.command';
 import {
+  createSendRemindersCommand,
+  type SendRemindersCommand,
+} from './usecases/commands/send-reminders.command';
+import {
   createListPublishedEventsQuery,
   type ListPublishedEventsQuery,
 } from './usecases/queries/list-published-events.query';
@@ -52,6 +56,7 @@ export interface EventContextDependencies {
   readonly publishEventCommand: PublishEventCommand;
   readonly updateEventCommand: UpdateEventCommand;
   readonly closeEventCommand: CloseEventCommand;
+  readonly sendRemindersCommand: SendRemindersCommand;
   readonly cancelEventCommand: CancelEventCommand;
   readonly eventRouter: Router;
   readonly communityEventRouter: Router;
@@ -74,6 +79,7 @@ export function createEventDependencies(
   const updateEventCommand = createUpdateEventCommand(eventRepository);
   const closeEventCommand = createCloseEventCommand(eventRepository, eventBus);
   const cancelEventCommand = createCancelEventCommand(eventRepository, eventBus);
+  const sendRemindersCommand = createSendRemindersCommand(eventRepository, eventBus);
 
   registerPolicies(prisma, notificationRepository, eventBus);
 
@@ -94,7 +100,7 @@ export function createEventDependencies(
     ),
     prisma,
   });
-  const schedulerRouter = createSchedulerRouter({ eventRepository, eventBus });
+  const schedulerRouter = createSchedulerRouter({ sendRemindersCommand });
 
   return {
     listPublishedEventsQuery,
@@ -104,6 +110,7 @@ export function createEventDependencies(
     updateEventCommand,
     closeEventCommand,
     cancelEventCommand,
+    sendRemindersCommand,
     eventRouter,
     communityEventRouter,
     schedulerRouter,
