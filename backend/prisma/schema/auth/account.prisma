@@ -1,0 +1,16 @@
+// ============================================================
+// Auth Context — アカウント
+// ============================================================
+
+model Account {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  members        CommunityMember[]
+  events         Event[]
+  participations Participation[]
+  checkins       CheckIn[]
+}

@@ -1,0 +1,14 @@
+// ============================================================
+// CheckIn Context — 当日チェックイン
+// ============================================================
+
+model CheckIn {
+  id              String   @id @default(uuid())
+  participationId String   @unique
+  eventId         String
+  accountId       String
+  checkedInAt     DateTime @default(now())
+
+  event   Event   @relation(fields: [eventId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+}

@@ -1,0 +1,27 @@
+// ============================================================
+// Meetup Context — コミュニティ
+// ============================================================
+
+model Community {
+  id          String              @id @default(uuid())
+  name        String              @unique
+  description String?
+  category    CommunityCategory
+  visibility  CommunityVisibility
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  members CommunityMember[]
+  events  Event[]
+}
+
+enum CommunityCategory {
+  TECH
+  BUSINESS
+  HOBBY
+}
+
+enum CommunityVisibility {
+  PUBLIC
+  PRIVATE
+}

@@ -1,0 +1,10 @@
+{
+  "name": "meetup-community-management",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Meetup community management full-stack application",
+  "workspaces": ["backend", "frontend", "e2e"],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

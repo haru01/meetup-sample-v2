@@ -1,0 +1,39 @@
+services:
+  dev:
+    build:
+      context: .
+      args:
+        USER_UID: ${USER_UID:-501}
+        USER_GID: ${USER_GID:-20}
+    volumes:
+      # Mount at same path as host so git worktree absolute paths work
+      # REPO_PARENT is the directory containing this project and its worktrees
+      - ${REPO_PARENT}:${REPO_PARENT}
+      # Named volumes for node_modules (Linux binaries, not macOS)
+      - node_modules_root:${REPO_PARENT}/${PROJECT_DIR_NAME:-meetup-sample}/node_modules
+      - node_modules_backend:${REPO_PARENT}/${PROJECT_DIR_NAME:-meetup-sample}/backend/node_modules
+      - node_modules_frontend:${REPO_PARENT}/${PROJECT_DIR_NAME:-meetup-sample}/frontend/node_modules
+      - node_modules_e2e:${REPO_PARENT}/${PROJECT_DIR_NAME:-meetup-sample}/e2e/node_modules
+      # Git config from host (read-only)
+      - ~/.gitconfig:/home/devuser/.gitconfig:ro
+      # Claude Code auth from host (認証トークン書き込みのため rw)
+      - ~/.claude:/home/devuser/.claude
+    working_dir: ${REPO_PARENT}/${PROJECT_DIR_NAME:-meetup-sample}
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    environment:
+      - DATABASE_URL=file:./prisma/dev.db
+      - JWT_SECRET=docker-dev-secret
+      - NODE_ENV=development
+      - VITE_HOST=0.0.0.0
+      - PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    tty: true
+    stdin_open: true
+
+volumes:
+  node_modules_root:
+  node_modules_backend:
+  node_modules_frontend:
+  node_modules_e2e:

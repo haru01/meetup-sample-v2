@@ -1,0 +1,20 @@
+// ============================================================
+// Notification — 通知スタブ（監査ログ兼用）
+// ============================================================
+
+model Notification {
+  id          String           @id @default(uuid())
+  type        NotificationType
+  recipientId String
+  payload     String
+  sentAt      DateTime         @default(now())
+}
+
+enum NotificationType {
+  APPROVAL
+  REMINDER
+  SURVEY
+  EVENT_CANCELLED
+  PARTICIPANT_CANCELLED
+  WAITLIST_PROMOTED
+}

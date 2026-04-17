@@ -1,0 +1,25 @@
+// ============================================================
+// Participation Context — 参加申し込み
+// ============================================================
+
+model Participation {
+  id        String              @id @default(uuid())
+  eventId   String
+  accountId String
+  status    ParticipationStatus @default(APPLIED)
+  appliedAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  event   Event   @relation(fields: [eventId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@unique([eventId, accountId])
+  @@index([eventId, status])
+}
+
+enum ParticipationStatus {
+  APPLIED
+  APPROVED
+  WAITLISTED
+  CANCELLED
+}

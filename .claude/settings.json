@@ -1,0 +1,147 @@
+{
+  "permissions": {
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(env)",
+      "Bash(echo:*)",
+      "Bash(which:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(jq:*)",
+      "Bash(curl:*)",
+      "Bash(sqlite3:*)",
+      "Bash(playwright:*)",
+      "Bash(prettier:*)",
+      "Bash(eslint:*)",
+      "Bash(tsc:*)",
+      "Bash(vitest:*)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Agent",
+      "WebFetch",
+      "WebSearch",
+      "mcp__*"
+    ],
+    "deny": [
+      "Bash(rm -rf /:*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/.env.local)",
+      "Read(**/credentials*)",
+      "Read(**/secrets*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Edit(**/.env.local)",
+      "Edit(**/credentials*)",
+      "Edit(**/secrets*)",
+      "Bash(cat *.env*)",
+      "Bash(cat *credentials*)",
+      "Bash(cat *secrets*)",
+      "Bash(cat *.pem)",
+      "Bash(cat *.key)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/secret-leak-detector.sh\"",
+            "timeout": 10,
+            "statusMessage": "機密情報スキャン中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/prettier-format.sh\"",
+            "timeout": 30,
+            "statusMessage": "Prettier 整形中..."
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/layer-guard.sh\"",
+            "timeout": 10,
+            "statusMessage": "レイヤー依存チェック中..."
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/typecheck.sh\"",
+            "timeout": 30,
+            "statusMessage": "バックエンド型チェック中..."
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/typecheck-frontend.sh\"",
+            "timeout": 30,
+            "statusMessage": "フロントエンド型チェック中..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit:*)",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-commit-gates.sh\"",
+            "timeout": 120,
+            "statusMessage": "Quality Gates 実行中..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(npm install:*)|Bash(npm add:*)|Bash(npm i :*)",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/dep-install-guard.sh\"",
+            "timeout": 10,
+            "statusMessage": "依存パッケージチェック中..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-verify.sh\"",
+            "timeout": 120,
+            "statusMessage": "Quality Gates 検証中..."
+          }
+        ]
+      }
+    ]
+  },
+  "channelsEnabled": true,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}

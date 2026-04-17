@@ -1,0 +1,461 @@
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
+import request from 'supertest';
+import type { PrismaClient } from '@prisma/client';
+import { createApp } from '../../../app';
+import {
+  createTestPrismaClient,
+  cleanupTestPrismaClient,
+  clearAuthTables,
+} from '../../../infrastructure/test-helper';
+import type { CommunityVisibility } from '../../models/schemas/community.schema';
+
+// ============================================================
+// テストヘルパー
+// ============================================================
+
+let prisma: PrismaClient;
+let app: ReturnType<typeof createApp>;
+
+beforeAll(() => {
+  prisma = createTestPrismaClient();
+  app = createApp(prisma);
+});
+
+afterAll(async () => {
+  await cleanupTestPrismaClient(prisma);
+});
+
+/**
+ * アカウントを登録してトークンを返す
+ */
+async function アカウントを登録してトークンを取得する(
+  email: string,
+  name: string = 'テストユーザー'
+): Promise<{ accountId: string; token: string }> {
+  const registerRes = await request(app)
+    .post('/auth/register')
+    .send({ name, email, password: 'password123' })
+    .expect(201);
+  const accountId = registerRes.body.account.id as string;
+  const token = registerRes.body.token as string;
+
+  return { accountId, token };
+}
+
+/**
+ * コミュニティを作成してIDを返す
+ */
+async function コミュニティを作成する(
+  token: string,
+  name: string = 'テストコミュニティ',
+  visibility: CommunityVisibility = 'PUBLIC'
+): Promise<string> {
+  const res = await request(app)
+    .post('/communities')
+    .set('Authorization', `Bearer ${token}`)
+    .send({
+      name,
+      description: 'テスト用コミュニティ',
+      category: 'TECH',
+      visibility,
+    })
+    .expect(201);
+  return res.body.community.id as string;
+}
+
+// ============================================================
+// POST /communities/:id/members
+// ============================================================
+
+describe('POST /communities/:id/members — コミュニティ参加', () => {
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  describe('PUBLIC コミュニティに参加する場合', () => {
+    it('201 が返り、status が ACTIVE であること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner@example.com', 'オーナー');
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'パブリックコミュニティ',
+        'PUBLIC'
+      );
+
+      const member = await アカウントを登録してトークンを取得する('member@example.com', 'メンバー');
+
+      const res = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      expect(res.body.communityId).toBe(communityId);
+      expect(res.body.accountId).toBe(member.accountId);
+      expect(res.body.status).toBe('ACTIVE');
+      expect(res.body.role).toBe('MEMBER');
+      expect(res.body.id).toBeDefined();
+    });
+  });
+
+  describe('PRIVATE コミュニティに参加する場合', () => {
+    it('201 が返り、status が PENDING であること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner2@example.com', 'オーナー2');
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'プライベートコミュニティ',
+        'PRIVATE'
+      );
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member2@example.com',
+        'メンバー2'
+      );
+
+      const res = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      expect(res.body.status).toBe('PENDING');
+    });
+  });
+
+  describe('存在しないコミュニティに参加しようとした場合', () => {
+    it('404 COMMUNITY_NOT_FOUND が返ること', async () => {
+      const member = await アカウントを登録してトークンを取得する(
+        'member3@example.com',
+        'メンバー3'
+      );
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+
+      const res = await request(app)
+        .post(`/communities/${nonExistentId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(404);
+
+      expect(res.body.code).toBe('COMMUNITY_NOT_FOUND');
+    });
+  });
+
+  describe('既に参加済みのコミュニティに参加しようとした場合', () => {
+    it('409 ALREADY_MEMBER が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner3@example.com', 'オーナー3');
+      const communityId = await コミュニティを作成する(owner.token, '重複参加テスト', 'PUBLIC');
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member4@example.com',
+        'メンバー4'
+      );
+
+      await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      const res = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(409);
+
+      expect(res.body.code).toBe('ALREADY_MEMBER');
+    });
+  });
+
+  describe('認証トークンがない場合', () => {
+    it('401 が返ること', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      await request(app).post(`/communities/${nonExistentId}/members`).expect(401);
+    });
+  });
+});
+
+// ============================================================
+// DELETE /communities/:id/members/me
+// ============================================================
+
+describe('DELETE /communities/:id/members/me — コミュニティ脱退', () => {
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  describe('メンバーがコミュニティを脱退する場合', () => {
+    it('200 が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner4@example.com', 'オーナー4');
+      const communityId = await コミュニティを作成する(owner.token, '脱退テスト', 'PUBLIC');
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member5@example.com',
+        'メンバー5'
+      );
+
+      await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      await request(app)
+        .delete(`/communities/${communityId}/members/me`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(200);
+    });
+  });
+
+  describe('オーナーが脱退しようとした場合', () => {
+    it('422 OWNER_CANNOT_LEAVE が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner5@example.com', 'オーナー5');
+      const communityId = await コミュニティを作成する(owner.token, 'オーナー脱退テスト', 'PUBLIC');
+
+      const res = await request(app)
+        .delete(`/communities/${communityId}/members/me`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(422);
+
+      expect(res.body.code).toBe('OWNER_CANNOT_LEAVE');
+    });
+  });
+
+  describe('認証トークンがない場合', () => {
+    it('401 が返ること', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      await request(app).delete(`/communities/${nonExistentId}/members/me`).expect(401);
+    });
+  });
+});
+
+// ============================================================
+// GET /communities/:id/members
+// ============================================================
+
+describe('GET /communities/:id/members — メンバー一覧取得', () => {
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  describe('コミュニティのメンバー一覧を取得する場合', () => {
+    it('200 が返り、members と total が含まれること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner6@example.com', 'オーナー6');
+      const communityId = await コミュニティを作成する(owner.token, '一覧テスト', 'PUBLIC');
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member6@example.com',
+        'メンバー6'
+      );
+      await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      const res = await request(app)
+        .get(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+
+      expect(res.body.members).toBeDefined();
+      expect(Array.isArray(res.body.members)).toBe(true);
+      // オーナーとメンバーの2人
+      expect(res.body.total).toBe(2);
+      expect(res.body.members.length).toBe(2);
+      // Read モデルで accountName が返ること
+      const names = res.body.members.map((m: { accountName: string }) => m.accountName);
+      expect(names).toContain('オーナー6');
+      expect(names).toContain('メンバー6');
+    });
+  });
+
+  describe('存在しないコミュニティのメンバー一覧を取得しようとした場合', () => {
+    it('404 COMMUNITY_NOT_FOUND が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner7@example.com', 'オーナー7');
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+
+      const res = await request(app)
+        .get(`/communities/${nonExistentId}/members`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(404);
+
+      expect(res.body.code).toBe('COMMUNITY_NOT_FOUND');
+    });
+  });
+
+  describe('認証トークンがない場合', () => {
+    it('401 が返ること', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      await request(app).get(`/communities/${nonExistentId}/members`).expect(401);
+    });
+  });
+});
+
+// ============================================================
+// PATCH /communities/:id/members/:memberId/approve
+// ============================================================
+
+describe('PATCH /communities/:id/members/:memberId/approve — メンバー承認', () => {
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  describe('オーナーが PENDING メンバーを承認する場合', () => {
+    it('200 が返り、status が ACTIVE に変わること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner8@example.com', 'オーナー8');
+      const communityId = await コミュニティを作成する(owner.token, '承認テスト', 'PRIVATE');
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member7@example.com',
+        'メンバー7'
+      );
+      const joinRes = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      const memberId = joinRes.body.id as string;
+
+      const res = await request(app)
+        .patch(`/communities/${communityId}/members/${memberId}/approve`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+
+      expect(res.body.status).toBe('ACTIVE');
+      expect(res.body.id).toBe(memberId);
+    });
+  });
+
+  describe('権限のないメンバーが承認しようとした場合', () => {
+    it('403 NOT_AUTHORIZED が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する('owner9@example.com', 'オーナー9');
+      const communityId = await コミュニティを作成する(owner.token, '権限テスト', 'PRIVATE');
+
+      const member1 = await アカウントを登録してトークンを取得する(
+        'member8@example.com',
+        'メンバー8'
+      );
+      const joinRes = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member1.token}`)
+        .expect(201);
+      const member1Id = joinRes.body.id as string;
+
+      // 承認してからMEMBERにしておく
+      await request(app)
+        .patch(`/communities/${communityId}/members/${member1Id}/approve`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+
+      // 新たな参加者
+      const member2 = await アカウントを登録してトークンを取得する(
+        'member9@example.com',
+        'メンバー9'
+      );
+      const joinRes2 = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member2.token}`)
+        .expect(201);
+      const member2Id = joinRes2.body.id as string;
+
+      // member1 (MEMBER ロール) が承認しようとする → 403
+      const res = await request(app)
+        .patch(`/communities/${communityId}/members/${member2Id}/approve`)
+        .set('Authorization', `Bearer ${member1.token}`)
+        .expect(403);
+
+      expect(res.body.code).toBe('FORBIDDEN');
+    });
+  });
+
+  describe('認証トークンがない場合', () => {
+    it('401 が返ること', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      await request(app)
+        .patch(`/communities/${nonExistentId}/members/${nonExistentId}/approve`)
+        .expect(401);
+    });
+  });
+});
+
+// ============================================================
+// PATCH /communities/:id/members/:memberId/reject
+// ============================================================
+
+describe('PATCH /communities/:id/members/:memberId/reject — メンバー拒否', () => {
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  describe('オーナーが PENDING メンバーを拒否する場合', () => {
+    it('204 が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner10@example.com',
+        'オーナー10'
+      );
+      const communityId = await コミュニティを作成する(owner.token, '拒否テスト', 'PRIVATE');
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member10@example.com',
+        'メンバー10'
+      );
+      const joinRes = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      const memberId = joinRes.body.id as string;
+
+      await request(app)
+        .patch(`/communities/${communityId}/members/${memberId}/reject`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(204);
+    });
+  });
+
+  describe('権限のないメンバーが拒否しようとした場合', () => {
+    it('403 NOT_AUTHORIZED が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner11@example.com',
+        'オーナー11'
+      );
+      const communityId = await コミュニティを作成する(owner.token, '拒否権限テスト', 'PRIVATE');
+
+      const member1 = await アカウントを登録してトークンを取得する(
+        'member11@example.com',
+        'メンバー11'
+      );
+      const joinRes1 = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member1.token}`)
+        .expect(201);
+      const member1Id = joinRes1.body.id as string;
+
+      // member1 を ACTIVE にしておく
+      await request(app)
+        .patch(`/communities/${communityId}/members/${member1Id}/approve`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+
+      // member2 が参加申請
+      const member2 = await アカウントを登録してトークンを取得する(
+        'member12@example.com',
+        'メンバー12'
+      );
+      const joinRes2 = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member2.token}`)
+        .expect(201);
+      const member2Id = joinRes2.body.id as string;
+
+      // member1 (MEMBER ロール) が拒否しようとする → 403
+      const res = await request(app)
+        .patch(`/communities/${communityId}/members/${member2Id}/reject`)
+        .set('Authorization', `Bearer ${member1.token}`)
+        .expect(403);
+
+      expect(res.body.code).toBe('FORBIDDEN');
+    });
+  });
+
+  describe('認証トークンがない場合', () => {
+    it('401 が返ること', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      await request(app)
+        .patch(`/communities/${nonExistentId}/members/${nonExistentId}/reject`)
+        .expect(401);
+    });
+  });
+});

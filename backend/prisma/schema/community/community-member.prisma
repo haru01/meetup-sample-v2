@@ -1,0 +1,29 @@
+// ============================================================
+// Meetup Context — コミュニティメンバー
+// ============================================================
+
+model CommunityMember {
+  id          String                @id @default(uuid())
+  communityId String
+  accountId   String
+  role        CommunityMemberRole
+  status      CommunityMemberStatus @default(PENDING)
+  createdAt   DateTime              @default(now())
+
+  community Community @relation(fields: [communityId], references: [id])
+  account   Account   @relation(fields: [accountId], references: [id])
+
+  @@unique([communityId, accountId])
+  @@index([accountId])
+}
+
+enum CommunityMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum CommunityMemberStatus {
+  PENDING
+  ACTIVE
+}
