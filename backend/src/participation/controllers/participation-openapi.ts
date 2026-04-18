@@ -6,7 +6,7 @@ import { ParticipationStatusSchema } from '../models/schemas/participation.schem
 // Participation OpenAPI スキーマ定義
 // ============================================================
 
-const ParticipationSchema = z
+const ParticipationDtoSchema = z
   .object({
     id: UuidSchema.openapi({ description: '参加ID' }),
     eventId: UuidSchema.openapi({ description: 'イベントID' }),
@@ -21,11 +21,11 @@ const ParticipationSchema = z
   .openapi('Participation');
 
 const ParticipationResponseSchema = z
-  .object({ participation: ParticipationSchema })
+  .object({ participation: ParticipationDtoSchema })
   .openapi('ParticipationResponse');
 
 const ParticipationListResponseSchema = z
-  .object({ participations: z.array(ParticipationSchema) })
+  .object({ participations: z.array(ParticipationDtoSchema) })
   .openapi('ParticipationListResponse');
 
 const ApproveParticipationsRequestSchema = z
@@ -67,10 +67,22 @@ registry.registerPath({
       description: '申込成功',
       content: { 'application/json': { schema: ParticipationResponseSchema } },
     },
-    401: { description: '認証エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    404: { description: 'イベントが見つからない', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    409: { description: '重複申込', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    422: { description: '公開されていない', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    401: {
+      description: '認証エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'イベントが見つからない',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    409: {
+      description: '重複申込',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    422: {
+      description: '公開されていない',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -86,9 +98,18 @@ registry.registerPath({
       description: '申込一覧',
       content: { 'application/json': { schema: ParticipationListResponseSchema } },
     },
-    401: { description: '認証エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    403: { description: '権限エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    404: { description: 'イベントが見つからない', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    401: {
+      description: '認証エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: '権限エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'イベントが見つからない',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -107,10 +128,22 @@ registry.registerPath({
       description: '承認結果',
       content: { 'application/json': { schema: ParticipationListResponseSchema } },
     },
-    401: { description: '認証エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    403: { description: '権限エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    404: { description: '見つからない', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    422: { description: 'ステータス不正', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    401: {
+      description: '認証エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: '権限エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: '見つからない',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    422: {
+      description: 'ステータス不正',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -126,10 +159,22 @@ registry.registerPath({
       description: 'キャンセル成功',
       content: { 'application/json': { schema: ParticipationResponseSchema } },
     },
-    401: { description: '認証エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    403: { description: '権限エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    404: { description: '見つからない', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    422: { description: 'ステータス不正', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    401: {
+      description: '認証エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: '権限エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: '見つからない',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    422: {
+      description: 'ステータス不正',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -144,7 +189,10 @@ registry.registerPath({
       description: '残席情報',
       content: { 'application/json': { schema: RemainingCapacitySchema } },
     },
-    404: { description: 'イベントが見つからない', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    404: {
+      description: 'イベントが見つからない',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -159,6 +207,9 @@ registry.registerPath({
       description: '参加履歴',
       content: { 'application/json': { schema: ParticipationListResponseSchema } },
     },
-    401: { description: '認証エラー', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    401: {
+      description: '認証エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });

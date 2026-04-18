@@ -12,7 +12,7 @@ import {
 // Event OpenAPI スキーマ定義
 // ============================================================
 
-const EventSchema = z
+const EventDtoSchema = z
   .object({
     id: UuidSchema.openapi({ description: 'イベントID' }),
     communityId: UuidSchema.openapi({ description: 'コミュニティID' }),
@@ -40,13 +40,13 @@ const EventSchema = z
 
 const EventResponseSchema = z
   .object({
-    event: EventSchema,
+    event: EventDtoSchema,
   })
   .openapi('EventPublicResponse');
 
 const ListEventsResponseSchema = z
   .object({
-    events: z.array(EventSchema),
+    events: z.array(EventDtoSchema),
   })
   .openapi('ListEventsResponse');
 

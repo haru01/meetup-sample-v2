@@ -11,7 +11,7 @@ import {
 // Community OpenAPI スキーマ定義
 // ============================================================
 
-const CommunitySchema = z
+const CommunityDtoSchema = z
   .object({
     id: UuidSchema.openapi({ description: 'コミュニティID' }),
     name: CommunityNameSchema.openapi({
@@ -31,7 +31,7 @@ const CommunitySchema = z
 
 const CommunityResponseSchema = z
   .object({
-    community: CommunitySchema,
+    community: CommunityDtoSchema,
   })
   .openapi('CommunityResponse');
 
@@ -52,7 +52,7 @@ const CreateCommunityRequestSchema = z
 
 const ListCommunitiesResponseSchema = z
   .object({
-    communities: z.array(CommunitySchema),
+    communities: z.array(CommunityDtoSchema),
     total: z.number().int().openapi({ description: '総件数', example: 42 }),
   })
   .openapi('ListCommunitiesResponse');
