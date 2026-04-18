@@ -68,18 +68,43 @@ def _inline(text: str) -> str:
     return t
 
 
+_TABLE_ROW_RE = re.compile(r'^\s*\|(.+)\|\s*$')
+_TABLE_ALIGN_RE = re.compile(r'^\s*:?-{3,}:?\s*$')
+_BULLET_RE = re.compile(r'^(\s*)[-*] (.*)$')
+
+
+def _split_row(line: str) -> list:
+    m = _TABLE_ROW_RE.match(line)
+    if not m:
+        return []
+    return [c.strip() for c in m.group(1).split('|')]
+
+
+def _is_table_separator(line: str) -> bool:
+    cells = _split_row(line)
+    return bool(cells) and all(_TABLE_ALIGN_RE.match(c) for c in cells)
+
+
 def md_to_html(text: str) -> str:
-    """Minimal Markdown → HTML. Handles headers, lists, code blocks, paragraphs."""
+    """Minimal Markdown → HTML. Handles headers, nested lists, tables, code blocks, paragraphs."""
     lines = text.split('\n')
     out = []
     in_code = False
     code_lang = ''
     code_buf: list = []
-    in_ul = False
+    ul_stack: list = []  # indent columns per open <ul>
 
-    for line in lines:
+    def close_lists_to(target_indent: int = -1) -> None:
+        while ul_stack and ul_stack[-1] > target_indent:
+            out.append('</ul>')
+            ul_stack.pop()
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
         # Code block toggle
         if line.startswith('```'):
+            close_lists_to(-1)
             if not in_code:
                 in_code = True
                 code_lang = html_mod.escape(line[3:].strip() or 'text')
@@ -88,18 +113,51 @@ def md_to_html(text: str) -> str:
                 in_code = False
                 body = html_mod.escape('\n'.join(code_buf))
                 out.append(f'<pre class="code-block lang-{code_lang}"><code>{body}</code></pre>')
+            i += 1
             continue
         if in_code:
             code_buf.append(line)
+            i += 1
             continue
 
-        # End list block
         stripped = line.strip()
-        if in_ul and not (line.startswith('- ') or line.startswith('* ')):
-            out.append('</ul>')
-            in_ul = False
+        bullet_match = _BULLET_RE.match(line)
 
-        if re.match(r'^-{3,}$', stripped):
+        # Close open lists when non-bullet content appears
+        if not bullet_match:
+            close_lists_to(-1)
+
+        # Table: header | separator | body rows
+        if (i + 1 < len(lines)
+                and _split_row(line)
+                and _is_table_separator(lines[i + 1])):
+            headers = _split_row(line)
+            i += 2  # skip header + separator
+            rows = []
+            while i < len(lines) and _split_row(lines[i]):
+                rows.append(_split_row(lines[i]))
+                i += 1
+            thead = ''.join(f'<th>{_inline(h)}</th>' for h in headers)
+            tbody = ''.join(
+                '<tr>' + ''.join(f'<td>{_inline(c)}</td>' for c in r) + '</tr>'
+                for r in rows
+            )
+            out.append(f'<table class="md-table"><thead><tr>{thead}</tr></thead><tbody>{tbody}</tbody></table>')
+            continue
+
+        if bullet_match:
+            indent = len(bullet_match.group(1))
+            content = bullet_match.group(2)
+            # Close deeper lists
+            while ul_stack and ul_stack[-1] > indent:
+                out.append('</ul>')
+                ul_stack.pop()
+            # Open new list if first bullet or deeper indent
+            if not ul_stack or ul_stack[-1] < indent:
+                out.append('<ul>')
+                ul_stack.append(indent)
+            out.append(f'<li>{_inline(content)}</li>')
+        elif re.match(r'^-{3,}$', stripped):
             out.append('<hr class="section-divider">')
         elif line.startswith('#### '):
             out.append(f'<h4>{_inline(line[5:])}</h4>')
@@ -109,20 +167,15 @@ def md_to_html(text: str) -> str:
             out.append(f'<h2>{_inline(line[3:])}</h2>')
         elif line.startswith('# '):
             out.append(f'<h1>{_inline(line[2:])}</h1>')
-        elif line.startswith('- ') or line.startswith('* '):
-            if not in_ul:
-                out.append('<ul>')
-                in_ul = True
-            out.append(f'<li>{_inline(line[2:])}</li>')
         elif stripped.startswith('<!--'):
             out.append(line)  # pass HTML comments through
         elif stripped == '':
             out.append('<div class="spacer"></div>')
         else:
             out.append(f'<p>{_inline(line)}</p>')
+        i += 1
 
-    if in_ul:
-        out.append('</ul>')
+    close_lists_to(-1)
     if in_code and code_buf:
         body = html_mod.escape('\n'.join(code_buf))
         out.append(f'<pre><code>{body}</code></pre>')
@@ -298,6 +351,15 @@ pre.code-block code {{
 }}
 hr.section-divider {{ border: none; border-top: 1px solid #E0E0E0; margin: 24px 0; }}
 .spacer {{ height: 4px; }}
+table.md-table {{
+  border-collapse: collapse; margin: 12px 0; font-size: 14px;
+  width: auto; min-width: 40%;
+}}
+table.md-table th, table.md-table td {{
+  border: 1px solid #CFD8DC; padding: 6px 12px; text-align: left; vertical-align: top;
+}}
+table.md-table th {{ background: #ECEFF1; font-weight: 700; }}
+table.md-table tbody tr:nth-child(even) {{ background: #FAFAFA; }}
 
 /* ── EventStorming Editor ── */
 .ef-editor {{
@@ -885,7 +947,7 @@ function groupsToItems(groups) {{
 }}
 
 // Render flow parts as indented multi-line text, breaking after each [event].
-// Example: `  @actor > !cmd > [event1]\n  > !cmd2 > [event2] >>`
+// Example: `  @actor > !cmd > [event1]\\n  > !cmd2 > [event2] >>`
 function formatFlowBody(parts, asyncSuffix) {{
   const joined = parts.join(' > ');
   const multiline = joined.replace(/\\] > /g, ']\\n  > ');
