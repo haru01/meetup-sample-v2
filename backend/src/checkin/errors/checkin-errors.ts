@@ -1,3 +1,5 @@
+import type { InvalidIdFormatError } from '@shared/errors';
+
 // ============================================================
 // CheckIn コンテキスト - エラー型定義
 // ============================================================
@@ -16,10 +18,11 @@ export type CheckInError =
   | ParticipationNotFoundError
   | ParticipationNotApprovedError
   | CheckInAlreadyExistsError
-  | UnauthorizedError;
+  | UnauthorizedError
+  | InvalidIdFormatError;
 
 // ============================================================
 // チェックイン一覧取得エラー
 // ============================================================
 
-export type ListCheckInsError = UnauthorizedError;
+export type ListCheckInsError = UnauthorizedError | InvalidIdFormatError;

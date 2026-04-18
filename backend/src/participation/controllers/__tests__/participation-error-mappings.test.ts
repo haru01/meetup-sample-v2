@@ -15,6 +15,19 @@ describe('mapApplyForEventErrorToResponse', () => {
     });
   });
 
+  it('InvalidIdFormat は 400 INVALID_ID_FORMAT を返し、field 名をメッセージに含める', () => {
+    expect(
+      mapApplyForEventErrorToResponse({
+        type: 'InvalidIdFormat',
+        field: 'eventId',
+        value: 'bad',
+      })
+    ).toEqual({
+      status: 400,
+      response: { code: 'INVALID_ID_FORMAT', message: 'eventId の形式が不正です' },
+    });
+  });
+
   it('EventNotPublished は 422 EVENT_NOT_PUBLISHED を返す', () => {
     expect(mapApplyForEventErrorToResponse({ type: 'EventNotPublished' })).toEqual({
       status: 422,
@@ -35,6 +48,19 @@ describe('mapApproveParticipationsErrorToResponse', () => {
     expect(mapApproveParticipationsErrorToResponse({ type: 'EventNotFound' })).toEqual({
       status: 404,
       response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+    });
+  });
+
+  it('InvalidIdFormat は 400 INVALID_ID_FORMAT を返す', () => {
+    expect(
+      mapApproveParticipationsErrorToResponse({
+        type: 'InvalidIdFormat',
+        field: 'requesterId',
+        value: 'bad',
+      })
+    ).toEqual({
+      status: 400,
+      response: { code: 'INVALID_ID_FORMAT', message: 'requesterId の形式が不正です' },
     });
   });
 
@@ -120,6 +146,19 @@ describe('mapGetRemainingCapacityErrorToResponse', () => {
     expect(mapGetRemainingCapacityErrorToResponse({ type: 'EventNotFound' })).toEqual({
       status: 404,
       response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+    });
+  });
+
+  it('InvalidIdFormat は 400 INVALID_ID_FORMAT を返す', () => {
+    expect(
+      mapGetRemainingCapacityErrorToResponse({
+        type: 'InvalidIdFormat',
+        field: 'eventId',
+        value: 'bad',
+      })
+    ).toEqual({
+      status: 400,
+      response: { code: 'INVALID_ID_FORMAT', message: 'eventId の形式が不正です' },
     });
   });
 });

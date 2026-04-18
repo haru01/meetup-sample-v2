@@ -51,6 +51,16 @@ export type InternalError = {
 };
 
 /**
+ * ID 文字列のフォーマット不正（UUID ではない等）。
+ * UseCase 内で throw せず Result.err として扱う目的で定義。
+ */
+export type InvalidIdFormatError = {
+  readonly type: 'InvalidIdFormat';
+  readonly field: string;
+  readonly value: string;
+};
+
+/**
  * Union of all shared error types
  */
 export type SharedError =
@@ -59,4 +69,5 @@ export type SharedError =
   | ConflictError
   | UnauthorizedError
   | ForbiddenError
-  | InternalError;
+  | InternalError
+  | InvalidIdFormatError;

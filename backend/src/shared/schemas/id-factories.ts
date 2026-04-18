@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { ok, err, type Result } from '../result.js';
+import type { InvalidIdFormatError } from '../errors.js';
 import {
   AccountIdSchema,
   CommunityIdSchema,
@@ -64,4 +66,39 @@ export function createCommunityMemberId(id?: string): CommunityMemberId {
  */
 export function createEventId(id?: string): EventId {
   return EventIdSchema.parse(id ?? randomUUID());
+}
+
+// ============================================================
+// Result ベース parse ヘルパ
+// ============================================================
+// UseCase 境界で外部入力を検証する際、throw させず
+// Result<_, InvalidIdFormatError> としてエラーを運ぶためのヘルパ。
+
+export function parseAccountId(
+  value: string,
+  field: string
+): Result<AccountId, InvalidIdFormatError> {
+  const parsed = AccountIdSchema.safeParse(value);
+  return parsed.success ? ok(parsed.data) : err({ type: 'InvalidIdFormat', field, value });
+}
+
+export function parseCommunityId(
+  value: string,
+  field: string
+): Result<CommunityId, InvalidIdFormatError> {
+  const parsed = CommunityIdSchema.safeParse(value);
+  return parsed.success ? ok(parsed.data) : err({ type: 'InvalidIdFormat', field, value });
+}
+
+export function parseCommunityMemberId(
+  value: string,
+  field: string
+): Result<CommunityMemberId, InvalidIdFormatError> {
+  const parsed = CommunityMemberIdSchema.safeParse(value);
+  return parsed.success ? ok(parsed.data) : err({ type: 'InvalidIdFormat', field, value });
+}
+
+export function parseEventId(value: string, field: string): Result<EventId, InvalidIdFormatError> {
+  const parsed = EventIdSchema.safeParse(value);
+  return parsed.success ? ok(parsed.data) : err({ type: 'InvalidIdFormat', field, value });
 }

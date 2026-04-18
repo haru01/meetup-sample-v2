@@ -1,7 +1,9 @@
 import { ok, err, type Result } from '@shared/result';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
-import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
+import type { InvalidIdFormatError } from '@shared/errors';
+import { parseAccountId, parseEventId } from '@shared/schemas/id-factories';
+import type { AccountId, EventId } from '@shared/schemas/common';
 import type { EventRepository } from '@event/repositories/event.repository';
 import {
   approveParticipation,
@@ -10,6 +12,16 @@ import {
 } from '../../models/participation';
 import type { ParticipationRepository } from '../../repositories/participation.repository';
 import type { ApproveParticipationsError } from '../../errors/participation-errors';
+
+function parseApproveIds(
+  command: ApproveParticipationsInput
+): Result<{ eventId: EventId; requesterId: AccountId }, InvalidIdFormatError> {
+  const parsedEventId = parseEventId(command.eventId, 'eventId');
+  if (!parsedEventId.ok) return parsedEventId;
+  const parsedRequesterId = parseAccountId(command.requesterId, 'requesterId');
+  if (!parsedRequesterId.ok) return parsedRequesterId;
+  return ok({ eventId: parsedEventId.value, requesterId: parsedRequesterId.value });
+}
 
 // ============================================================
 // 参加申込承認（BULK）コマンド
@@ -37,8 +49,9 @@ export function createApproveParticipationsCommand(
   eventBus: InMemoryEventBus<MeetupDomainEvent>
 ): ApproveParticipationsCommand {
   return async (command) => {
-    const eventId = EventIdSchema.parse(command.eventId);
-    const requesterId = AccountIdSchema.parse(command.requesterId);
+    const parsed = parseApproveIds(command);
+    if (!parsed.ok) return parsed;
+    const { eventId, requesterId } = parsed.value;
 
     const event = await eventRepository.findById(eventId);
     if (!event) {

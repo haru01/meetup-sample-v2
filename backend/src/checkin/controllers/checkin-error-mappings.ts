@@ -1,12 +1,16 @@
 import type { ErrorResponse } from '@shared/controllers/error-response';
-import type {
-  CheckInError,
-  ListCheckInsError,
-} from '../errors/checkin-errors';
+import type { CheckInError, ListCheckInsError } from '../errors/checkin-errors';
 
 // ============================================================
 // CheckIn エラー → HTTP レスポンス マッピング
 // ============================================================
+
+function invalidIdFormatResponse(field: string): ErrorResponse {
+  return {
+    status: 400,
+    response: { code: 'INVALID_ID_FORMAT', message: `${field} の形式が不正です` },
+  };
+}
 
 export function mapCheckInErrorToResponse(error: CheckInError): ErrorResponse {
   switch (error.type) {
@@ -42,6 +46,8 @@ export function mapCheckInErrorToResponse(error: CheckInError): ErrorResponse {
           message: 'この操作を行う権限がありません',
         },
       };
+    case 'InvalidIdFormat':
+      return invalidIdFormatResponse(error.field);
   }
 }
 
@@ -55,5 +61,7 @@ export function mapListCheckInsErrorToResponse(error: ListCheckInsError): ErrorR
           message: 'この操作を行う権限がありません',
         },
       };
+    case 'InvalidIdFormat':
+      return invalidIdFormatResponse(error.field);
   }
 }

@@ -5,6 +5,10 @@ import {
   createAccountId,
   createCommunityId,
   createCommunityMemberId,
+  parseAccountId,
+  parseCommunityId,
+  parseCommunityMemberId,
+  parseEventId,
 } from '../schemas/id-factories';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -90,5 +94,77 @@ describe('createCommunityMemberId', () => {
   it('CommunityMemberId型として使用できる', () => {
     const id: CommunityMemberId = createCommunityMemberId();
     expect(typeof id).toBe('string');
+  });
+});
+
+describe('parseAccountId', () => {
+  it('有効な UUID を渡すと ok(AccountId) を返す', () => {
+    const uuid = randomUUID();
+    const result = parseAccountId(uuid, 'accountId');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(uuid);
+  });
+
+  it('不正な UUID を渡すと err(InvalidIdFormat) を返す', () => {
+    const result = parseAccountId('not-a-uuid', 'accountId');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.type).toBe('InvalidIdFormat');
+      expect(result.error.field).toBe('accountId');
+      expect(result.error.value).toBe('not-a-uuid');
+    }
+  });
+
+  it('空文字列も err を返す', () => {
+    const result = parseAccountId('', 'accountId');
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe('parseCommunityId', () => {
+  it('有効な UUID を渡すと ok(CommunityId) を返す', () => {
+    const uuid = randomUUID();
+    const result = parseCommunityId(uuid, 'communityId');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(uuid);
+  });
+
+  it('不正な UUID を渡すと err(InvalidIdFormat) を返す', () => {
+    const result = parseCommunityId('xxx', 'communityId');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.type).toBe('InvalidIdFormat');
+  });
+});
+
+describe('parseCommunityMemberId', () => {
+  it('有効な UUID を渡すと ok(CommunityMemberId) を返す', () => {
+    const uuid = randomUUID();
+    const result = parseCommunityMemberId(uuid, 'memberId');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(uuid);
+  });
+
+  it('不正な UUID を渡すと err(InvalidIdFormat) を返す', () => {
+    const result = parseCommunityMemberId('xxx', 'memberId');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.type).toBe('InvalidIdFormat');
+  });
+});
+
+describe('parseEventId', () => {
+  it('有効な UUID を渡すと ok(EventId) を返す', () => {
+    const uuid = randomUUID();
+    const result = parseEventId(uuid, 'eventId');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(uuid);
+  });
+
+  it('不正な UUID を渡すと err(InvalidIdFormat) を返す', () => {
+    const result = parseEventId('xxx', 'eventId');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.type).toBe('InvalidIdFormat');
+      expect(result.error.field).toBe('eventId');
+    }
   });
 });

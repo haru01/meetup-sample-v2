@@ -1,9 +1,9 @@
 import type { PrismaClient } from '@prisma/client';
 import { ok, err, type Result } from '@shared/result';
-import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
+import { parseAccountId, parseEventId } from '@shared/schemas/id-factories';
 import type { CheckIn } from '../../models/checkin';
 import type { CheckInRepository } from '../../repositories/checkin.repository';
-import type { UnauthorizedError } from '../../errors/checkin-errors';
+import type { ListCheckInsError } from '../../errors/checkin-errors';
 
 // ============================================================
 // チェックイン一覧取得クエリ
@@ -20,7 +20,7 @@ export type ListCheckInsResult = {
 
 export type ListCheckInsQuery = (
   input: ListCheckInsInput
-) => Promise<Result<ListCheckInsResult, UnauthorizedError>>;
+) => Promise<Result<ListCheckInsResult, ListCheckInsError>>;
 
 /**
  * チェックイン一覧取得ユースケース
@@ -32,8 +32,12 @@ export function createListCheckInsQuery(
   checkInRepository: CheckInRepository
 ): ListCheckInsQuery {
   return async ({ eventId, requesterId }) => {
-    const parsedEventId = EventIdSchema.parse(eventId);
-    const parsedRequesterId = AccountIdSchema.parse(requesterId);
+    const parsedEventIdResult = parseEventId(eventId, 'eventId');
+    if (!parsedEventIdResult.ok) return parsedEventIdResult;
+    const parsedRequesterIdResult = parseAccountId(requesterId, 'requesterId');
+    if (!parsedRequesterIdResult.ok) return parsedRequesterIdResult;
+    const parsedEventId = parsedEventIdResult.value;
+    const parsedRequesterId = parsedRequesterIdResult.value;
 
     const event = await prisma.event.findUnique({ where: { id: parsedEventId } });
     if (!event || event.createdBy !== parsedRequesterId) {

@@ -1,3 +1,5 @@
+import type { InvalidIdFormatError } from '@shared/errors';
+
 // ============================================================
 // 参加コンテキスト - エラー型定義
 // ============================================================
@@ -19,13 +21,15 @@ export type UnauthorizedError = { type: 'Unauthorized' };
 export type ApplyForEventError =
   | EventNotFoundError
   | EventNotPublishedError
-  | AlreadyAppliedError;
+  | AlreadyAppliedError
+  | InvalidIdFormatError;
 
 export type ApproveParticipationsError =
   | EventNotFoundError
   | UnauthorizedError
   | ParticipationNotFoundError
-  | ParticipationInvalidStatusError;
+  | ParticipationInvalidStatusError
+  | InvalidIdFormatError;
 
 export type CancelParticipationError =
   | ParticipationNotFoundError
@@ -34,4 +38,4 @@ export type CancelParticipationError =
 
 export type GetApplicationListError = EventNotFoundError | UnauthorizedError;
 
-export type GetRemainingCapacityError = EventNotFoundError;
+export type GetRemainingCapacityError = EventNotFoundError | InvalidIdFormatError;

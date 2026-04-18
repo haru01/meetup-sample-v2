@@ -5,6 +5,15 @@ import {
 } from '../checkin-error-mappings';
 
 describe('mapCheckInErrorToResponse', () => {
+  it('InvalidIdFormat は 400 INVALID_ID_FORMAT を返す', () => {
+    expect(
+      mapCheckInErrorToResponse({ type: 'InvalidIdFormat', field: 'eventId', value: 'bad' })
+    ).toEqual({
+      status: 400,
+      response: { code: 'INVALID_ID_FORMAT', message: 'eventId の形式が不正です' },
+    });
+  });
+
   it('ParticipationNotFound は 404 PARTICIPATION_NOT_FOUND を返す', () => {
     expect(mapCheckInErrorToResponse({ type: 'ParticipationNotFound' })).toEqual({
       status: 404,
@@ -39,6 +48,15 @@ describe('mapListCheckInsErrorToResponse', () => {
     expect(mapListCheckInsErrorToResponse({ type: 'Unauthorized' })).toEqual({
       status: 403,
       response: { code: 'FORBIDDEN', message: 'この操作を行う権限がありません' },
+    });
+  });
+
+  it('InvalidIdFormat は 400 INVALID_ID_FORMAT を返す', () => {
+    expect(
+      mapListCheckInsErrorToResponse({ type: 'InvalidIdFormat', field: 'eventId', value: 'bad' })
+    ).toEqual({
+      status: 400,
+      response: { code: 'INVALID_ID_FORMAT', message: 'eventId の形式が不正です' },
     });
   });
 });

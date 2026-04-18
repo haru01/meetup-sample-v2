@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { ok, err, type Result } from '@shared/result';
-import { EventIdSchema } from '@shared/schemas/common';
+import { parseEventId } from '@shared/schemas/id-factories';
 import type { ParticipationRepository } from '../../repositories/participation.repository';
 import type { GetRemainingCapacityError } from '../../errors/participation-errors';
 
@@ -27,7 +27,9 @@ export function createGetRemainingCapacityQuery(
   participationRepository: ParticipationRepository
 ): GetRemainingCapacityQuery {
   return async (eventId) => {
-    const parsedEventId = EventIdSchema.parse(eventId);
+    const parsed = parseEventId(eventId, 'eventId');
+    if (!parsed.ok) return parsed;
+    const parsedEventId = parsed.value;
     const event = await prisma.event.findUnique({
       where: { id: parsedEventId },
       select: { id: true, capacity: true },

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { ok, err, type Result } from '@shared/result';
-import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
+import type { InvalidIdFormatError } from '@shared/errors';
+import { parseAccountId, parseEventId } from '@shared/schemas/id-factories';
 import type { ParticipationRepository } from '@participation/repositories/participation.repository';
 import { ParticipationStatus } from '@participation/models/schemas/participation.schema';
 import type { CheckIn } from '../../models/checkin';
@@ -32,6 +33,7 @@ export type CheckInCommand = (
     | ParticipationNotApprovedError
     | CheckInAlreadyExistsError
     | UnauthorizedError
+    | InvalidIdFormatError
   >
 >;
 
@@ -46,8 +48,12 @@ export function createCheckInCommand(
   checkInRepository: CheckInRepository
 ): CheckInCommand {
   return async ({ eventId, requesterId }) => {
-    const parsedEventId = EventIdSchema.parse(eventId);
-    const parsedRequesterId = AccountIdSchema.parse(requesterId);
+    const parsedEventIdResult = parseEventId(eventId, 'eventId');
+    if (!parsedEventIdResult.ok) return parsedEventIdResult;
+    const parsedRequesterIdResult = parseAccountId(requesterId, 'requesterId');
+    if (!parsedRequesterIdResult.ok) return parsedRequesterIdResult;
+    const parsedEventId = parsedEventIdResult.value;
+    const parsedRequesterId = parsedRequesterIdResult.value;
 
     const participation = await participationRepository.findByEventAndAccount(
       parsedEventId,

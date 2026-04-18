@@ -11,10 +11,20 @@ import type {
 // 参加エラー → HTTP レスポンス マッピング
 // ============================================================
 
+function invalidIdFormatResponse(field: string): ErrorResponse {
+  return {
+    status: 400,
+    response: { code: 'INVALID_ID_FORMAT', message: `${field} の形式が不正です` },
+  };
+}
+
 export function mapApplyForEventErrorToResponse(error: ApplyForEventError): ErrorResponse {
   switch (error.type) {
     case 'EventNotFound':
-      return { status: 404, response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' } };
+      return {
+        status: 404,
+        response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+      };
     case 'EventNotPublished':
       return {
         status: 422,
@@ -25,6 +35,8 @@ export function mapApplyForEventErrorToResponse(error: ApplyForEventError): Erro
         status: 409,
         response: { code: 'ALREADY_APPLIED', message: 'すでに申込済みです' },
       };
+    case 'InvalidIdFormat':
+      return invalidIdFormatResponse(error.field);
   }
 }
 
@@ -33,7 +45,10 @@ export function mapApproveParticipationsErrorToResponse(
 ): ErrorResponse {
   switch (error.type) {
     case 'EventNotFound':
-      return { status: 404, response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' } };
+      return {
+        status: 404,
+        response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+      };
     case 'Unauthorized':
       return { status: 403, response: { code: 'FORBIDDEN', message: '権限がありません' } };
     case 'ParticipationNotFound':
@@ -49,6 +64,8 @@ export function mapApproveParticipationsErrorToResponse(
           message: `現在のステータス(${error.current})では承認できません`,
         },
       };
+    case 'InvalidIdFormat':
+      return invalidIdFormatResponse(error.field);
   }
 }
 
@@ -79,7 +96,10 @@ export function mapGetApplicationListErrorToResponse(
 ): ErrorResponse {
   switch (error.type) {
     case 'EventNotFound':
-      return { status: 404, response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' } };
+      return {
+        status: 404,
+        response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+      };
     case 'Unauthorized':
       return { status: 403, response: { code: 'FORBIDDEN', message: '権限がありません' } };
   }
@@ -90,6 +110,11 @@ export function mapGetRemainingCapacityErrorToResponse(
 ): ErrorResponse {
   switch (error.type) {
     case 'EventNotFound':
-      return { status: 404, response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' } };
+      return {
+        status: 404,
+        response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+      };
+    case 'InvalidIdFormat':
+      return invalidIdFormatResponse(error.field);
   }
 }

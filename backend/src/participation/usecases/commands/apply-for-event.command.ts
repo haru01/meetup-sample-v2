@@ -1,7 +1,7 @@
 import { ok, err, type Result } from '@shared/result';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
-import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
+import { parseAccountId, parseEventId } from '@shared/schemas/id-factories';
 import type { EventRepository } from '@event/repositories/event.repository';
 import { EventStatus } from '@event/models/schemas/event.schema';
 import { createParticipationId, type Participation } from '../../models/participation';
@@ -35,8 +35,12 @@ export function createApplyForEventCommand(
   eventBus: InMemoryEventBus<MeetupDomainEvent>
 ): ApplyForEventCommand {
   return async (command) => {
-    const eventId = EventIdSchema.parse(command.eventId);
-    const accountId = AccountIdSchema.parse(command.accountId);
+    const parsedEventId = parseEventId(command.eventId, 'eventId');
+    if (!parsedEventId.ok) return parsedEventId;
+    const parsedAccountId = parseAccountId(command.accountId, 'accountId');
+    if (!parsedAccountId.ok) return parsedAccountId;
+    const eventId = parsedEventId.value;
+    const accountId = parsedAccountId.value;
 
     const event = await eventRepository.findById(eventId);
     if (!event) {
