@@ -16,6 +16,7 @@ const createAuthContext = (
 ): AuthContextType => ({
   user: null,
   isAuthenticated: false,
+  authLoading: false,
   login: vi.fn(),
   register: vi.fn(),
   logout: vi.fn(),
