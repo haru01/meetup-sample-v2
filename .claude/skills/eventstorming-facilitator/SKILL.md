@@ -61,16 +61,18 @@ python3 .claude/skills/eventstorming-facilitator/scripts/render.py doc/eventstor
 
 - DML 抜粋は必ず末尾（H・Q セクションの後）に置く。重要な変更があった場合のみ
 - H・Q 番号はセッション通じて通し（解決済みは欠番、再利用しない）
-- 初回 DML 出力時に記法凡例を1回だけ添える（DML: `EVT` `CMD` `AGG` `QRY` `POLICY` `TRIGGER` / フロー図: `|BC|` `@Actor` `?ReadModel` `!Command` `[Event]` `$Policy` `>` `>>`）
+- 初回 DML 出力時に記法凡例を1回だけ添える（DML: `CONTEXT` `LANGUAGE` `UPSTREAM` `DOWNSTREAM` `EVT` `CMD` `AGG` `QRY` `POLICY` `TRIGGER` `WHEN` / フロー図: `|BC|` `@Actor` `?ReadModel` `!Command` `[Event]` `$Policy` `>` `>>`）
+- `POLICY` ブロックは EVENTUAL-TX 専用。SAME-TX の分岐は発行元 SCENARIO の `WHEN` としてインライン記述する（`references/dml-spec.md` 参照）
 
 ### ③ ブラウザ保存後の差分同期（フェーズ2完了後）
 
 ユーザーがメッセージを送ってきたら毎ターン：
 
 1. `Read` でアクティブな MD ファイルを再読み込み（ブラウザ保存を拾う）
-2. セクション3の `:::diagram-svg event_flow` とセクション8の DML を照合する
+2. セクション3の `:::diagram-svg event_flow` とセクション9の DML を照合する
 3. 差分があれば DML を `Edit` で更新 → 品質チェックサブエージェントを起動（`references/quality-check-agent.md` 参照）→ render.py を再起動
 4. 差分がなければそのままファシリテーションを継続
+5. フロー図に新しい日本語ラベルが現れたら、セクション10（用語集）にも対応する英語識別子を追記する
 
 フロー図は日本語ラベル、DML は英語識別子。ラベルの対応は意味で判断する（例：`!コミュニティを作成` ↔ `CMD CreateCommunity`）。
 
@@ -92,9 +94,9 @@ python3 .claude/skills/eventstorming-facilitator/scripts/render.py doc/eventstor
 :::diagram-svg event_flow
 title: <タイトル>
 flow:
-|BC名|: <フロー起点の文脈説明（アクター・TX種別など）>
+|BC名|: <フロー起点の文脈説明（アクター・起動条件など）>
   @アクター > ?リードモデル > !コマンド > [イベント] >>
-|BC名|: <遷移の境界説明（EVENTUAL/SAME TX）>
+|BC名|: <遷移の境界説明（何をきっかけに次のレーンへ移るか）>
   $ポリシー > !コマンド > [イベント]
 :::
 ```
@@ -107,8 +109,8 @@ flow:
 | `!コマンド名` | コマンド付箋（`!` は省略可） | 青 |
 | `[イベント名]` | イベント付箋（過去形） | 橙 |
 | `$ポリシー名` | ポリシー付箋 | 紫 |
-| `>` | 同期フロー（同一 TX） | — |
-| `>>` | 非同期遷移（EVENTUAL）— 前レーン最後の行末に付ける | — |
+| `>` | 同期フロー（直接連鎖） | — |
+| `>>` | 非同期遷移（レーン切り替え）— 前レーン最後の行末に付ける | — |
 
 **ラベルの日本語化方針：** コマンド=動詞句、イベント=過去形、ポリシー=目的名詞句、アクター=役割名、BC 名=英語のまま。DML コードブロック（セクション8）は英語のまま維持。
 
@@ -119,12 +121,15 @@ flow:
 - **SCENARIO 名は日本語**でアクター＋行為を書く（例：`SCENARIO 主催者がコミュニティを作成する`）
 - **SCENARIO 内フィールドの順序は `ACTOR → QRY → CMD → EVT → AGG → RULE → ERR → POL`** を厳守する
 - **ACTOR は必須**。SCENARIO の先頭に `ACTOR <アクター名>`（典型値：`Organizer` `Member` `System`）
+- **CONTEXT 宣言に `UPSTREAM` / `DOWNSTREAM` を必須記載**（依存なしの場合は `(none)` を明示、関係タイプを行末コメントで付記）
+- **POLICY ブロックは EVENTUAL-TX 専用** — SAME-TX の分岐は発行元 SCENARIO の `WHEN` としてインライン記述する
 - **POLICY は対応 SCENARIO の直後・CONTEXT 内に配置** — ファイル末尾にまとめない。`SCENARIO` 内の `POL` はポリシー名への参照、`POLICY` ブロックが定義
 - **RULE / ERR / POLICY の日本語補足は上の行に `#` コメントで分離**
 - **ポリシー後の Command は必須** — `$Policy > [Event]` の省略は禁止。必ず `$Policy > !Command > [Event]` と書く
 - **EVT / CMD / AGG / QRY は英語のみ**（`EVT OrderPlaced`、`AGG Order`、`QRY GetEventDetails` — `()` や `<<>>` は不要）
 - **QRY は判断に必要なデータのみ** — アクター（「このコマンドを発行するか」）またはポリシー（「どのコマンドを発行するか・誰に対して」）の判断材料のみ書く。コマンド実装内部で必要なデータ（BULK の実行対象リストなど）はコマンドの責務（詳細は `references/dml-spec.md`）
 - **BC（CONTEXT）名は `lowercase-with-hyphen`** で略さず書く
+- **インフラ系ドメイン（通知・スケジューラ・決済等）は「BC 昇格 vs POLICY 留置」を判定** — データモデルがあるのに CONTEXT 宣言がない「宙吊り」状態を禁止（判定基準は `references/dml-spec.md`）
 
 ---
 
@@ -151,12 +156,13 @@ flow:
 | 1 | ハッピーパスストーリー（400〜600字） | フェーズ2 |
 | 2 | 代替シナリオ（散文のみ、図はセクション3に集約） | フェーズ2 |
 | 3 | Event Walkthrough（`:::diagram-svg event_flow` 図） | フェーズ2以降 |
-| 4 | コンテキスト候補（`### english-name（日本語名）` 形式） | フェーズ4完了後 |
-| 5 | 集約候補（不変条件・状態遷移必須） | フェーズ5完了後 |
+| 4 | コンテキスト候補（`### english-name（日本語名）` 形式、`UPSTREAM`/`DOWNSTREAM` 依存方向必須） | フェーズ4完了後 |
+| 5 | 集約候補（**属性を Zod スキーマで記述**・不変条件・状態遷移必須） | フェーズ5完了後 |
 | 6 | リードモデル候補（`### QRY名（日本語名）` 形式） | フェーズ4〜5完了後 |
 | 7 | オープンクエスチョン | 随時 |
 | 8 | 次のアクション | 随時 |
 | 9 | DML（` ```dml ` コードブロック全文） | 随時 |
+| 10 | 用語集（日本語フロー図ラベル ↔ 英語 DML 識別子の対応表） | フェーズ3以降・随時更新 |
 
 **セクション6 リードモデル候補の書き方：**
 

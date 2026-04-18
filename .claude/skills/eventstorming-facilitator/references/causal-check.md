@@ -30,6 +30,7 @@ DMLの `SCENARIO` / `POLICY` のつながりを辿り、切れ・孤立・循環
 | **C5** | System ACTORのSCENARIO CMDがPOLICYから発行されているか | 人間が呼ぶはずのないCMDが自動起動されていない |
 | **C6** | WHEN分岐の全パスにEVT→POLが揃っているか | 成功パスのみPOL定義、失敗パスが未接続 |
 | **C7** | 循環参照の検出 | A→B→C→A のような無限ループになるPOLICYチェーン |
+| **C8** | CONTEXT の UPSTREAM / DOWNSTREAM 参照が実在する CONTEXT 名を指しているか | 未定義 BC を依存先に指定したタイプミス・古い名前の残存 |
 
 ---
 

@@ -37,8 +37,8 @@ flow:
   [{{BC名}}] ^{{アクター（日本語）}}^ > {{コマンド（日本語）}} > ({{イベント（日本語）}})
   >> [{{BC名}}] {{{ポリシー（日本語）}}} > {{コマンド（日本語）}} > ({{イベント（日本語）}})
   >> [{{BC名}}] {{{ポリシー（日本語）}}} > ({{イベント（日本語）}})
-segment-label-0: {{フロー開始の文脈説明（アクター・起動条件・TX種別）}}
-segment-label-1: {{セグメント1→2の境界説明（EVENTUAL / SAME TX）}}
+segment-label-0: {{フロー開始の文脈説明（アクター・起動条件）}}
+segment-label-1: {{セグメント1→2の境界説明（何をきっかけに次のレーンへ移るか）}}
 segment-label-2: {{セグメント2→3の境界説明}}
 :::
 
@@ -64,6 +64,10 @@ segment-label-1: {{境界説明（EVENTUAL）}}
 
 - 境界の理由: {{なぜここでBCが分かれるか}}
 - 含むシナリオ: {{scenario-1}}, {{scenario-2}}
+- **依存方向**:
+  - UPSTREAM: {{context-A}} ({{Customer-Supplier | Conformist | Shared-Kernel | ACL}})
+  - DOWNSTREAM: {{context-B}} ({{関係タイプ}})
+  - （依存なしの場合は `(none)` を明示）
 - LANGUAGE: `{{言葉}}` — このBCでの意味: {{定義}}
 
 ---
@@ -75,6 +79,20 @@ segment-label-1: {{境界説明（EVENTUAL）}}
 - コンテキスト: `{{context-slug}}`
 - 関連シナリオ: `{{scenario-1}}`, `{{scenario-2}}`
 
+#### 属性（Zod）
+
+```ts
+export const {{AggregateName}}Schema = z.object({
+  id: {{AggregateName}}IdSchema,
+  // {{属性: Branded ID は別途参照、enum はリテラルユニオンで表現}}
+  // 例:
+  // title: z.string().min(1).max(200),
+  // status: z.enum(['DRAFT', 'PUBLISHED', 'CLOSED']),
+  // createdAt: z.date(),
+});
+export type {{AggregateName}} = z.infer<typeof {{AggregateName}}Schema>;
+```
+
 #### 不変条件
 - {{invariant 1（日本語）}}
 - {{invariant 2（日本語）}}
@@ -84,7 +102,17 @@ segment-label-1: {{境界説明（EVENTUAL）}}
 
 ---
 
-## 6) オープンクエスチョン
+## 6) リードモデル候補
+
+### {{QRYName}}（{{日本語名}}）
+- **利用者**: {{アクター名 または ポリシー名}}
+- **目的**: {{何を確認して何を決めるか（1行）}}
+- **ソース**: {{どの集約・BC からデータを取るか}}
+- **算出**: {{計算式・取得条件・ソート順など（単純ルックアップなら省略可）}}
+
+---
+
+## 7) オープンクエスチョン
 
 - Q1. {{質問}} — 決まると何が変わるか: {{影響}}
 - Q2. {{質問}} — 決まると何が変わるか: {{影響}}
@@ -94,15 +122,46 @@ segment-label-1: {{境界説明（EVENTUAL）}}
 
 ---
 
-## 7) 次のアクション
+## 8) 次のアクション
 
 - {{action 1}}
 - {{action 2}}
 
 ---
 
-## 8) DML
+## 9) DML
 
 ```dml
 {{DML全文（英語のまま）}}
 ```
+
+---
+
+## 10) 用語集
+
+日本語フロー図ラベルと英語 DML 識別子の対応を一覧で示す。新しい CMD/EVT/POLICY/Actor を追加したら必ず本表を更新する。
+
+### アクター
+| 日本語（フロー図） | 英語（DML） | 備考 |
+|------|------|------|
+| {{例: 主催者}} | {{Organizer}} | |
+
+### コマンド
+| 日本語（フロー図） | 英語（DML） | 備考 |
+|------|------|------|
+| {{例: 参加を申し込む}} | {{ApplyForEvent}} | |
+
+### イベント
+| 日本語（フロー図） | 英語（DML） | 備考 |
+|------|------|------|
+| {{例: 参加申し込みが完了した}} | {{ParticipationApplied}} | |
+
+### ポリシー
+| 日本語（フロー図） | 英語（DML） | 備考 |
+|------|------|------|
+| {{例: キャンセル繰り上げ}} | {{WaitlistPromotion}} | |
+
+### リードモデル
+| 日本語（フロー図） | 英語（DML） | 備考 |
+|------|------|------|
+| {{例: 残席数}} | {{GetRemainingCapacity}} | |

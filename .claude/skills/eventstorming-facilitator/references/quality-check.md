@@ -16,6 +16,8 @@ MDファイルを書き出した後、サブエージェントがこのチェッ
 | D6 | `CONTEXT` 名は `lowercase-with-hyphen` | `CONTEXT OrderManagement` | `CONTEXT order-management` |
 | D7 | `RULE`/`ERR`/`POLICY` の日本語補足は直上の `#` コメント行に書く | `RULE 在庫数 >= 0` | `# 在庫数は0以上`<br>`RULE StockNonNegative` |
 | D8 | `EVT`/`CMD`/`AGG` に `()` `<<>>` を付けない | `EVT (OrderPlaced)` | `EVT OrderPlaced` |
+| D9 | `POLICY` ブロックは EVENTUAL-TX 限定。`TX SAME` 記述を検出したら SCENARIO の `WHEN` 分岐に書き換え提案する | `POLICY X`<br>`  TX SAME` | SCENARIO 内 `WHEN condition → EVT ...` |
+| D10 | 各 `CONTEXT` 宣言に `UPSTREAM` / `DOWNSTREAM` が記載されている（依存なしは `(none)` 明示） | `CONTEXT foo`<br>`  LANGUAGE Foo = "..."` | `CONTEXT foo`<br>`  LANGUAGE Foo = "..."`<br>`  UPSTREAM (none)`<br>`  DOWNSTREAM bar  # Customer-Supplier` |
 
 ---
 
@@ -40,6 +42,9 @@ MDファイルを書き出した後、サブエージェントがこのチェッ
 | S2 | セクション2（代替シナリオ）は**テキストのみ**。`:::diagram-svg` ブロックがあれば削除する（図はセクション3に集約） |
 | S3 | セクション3（Event Walkthrough）に **ハッピーパス図が最初** に来ているか |
 | S4 | セクション3の代替シナリオにも `:::diagram-svg event_flow` 図があるか（ハッピーパス図の後） |
+| S5 | セクション5（集約候補）の各 AGG に ` ```ts ` の Zod スキーマブロックが存在するか |
+| S6 | セクション4（コンテキスト候補）の各 BC に「依存方向」項目（UPSTREAM / DOWNSTREAM）が存在するか |
+| S7 | セクション10（用語集）が存在し、フロー図で使われている `@` / `!` / `[]` / `$` / `?` 付き日本語ラベルがすべて登録されているか |
 
 ---
 
