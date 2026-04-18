@@ -69,7 +69,7 @@ python3 .claude/skills/eventstorming-facilitator/scripts/render.py doc/eventstor
 ユーザーがメッセージを送ってきたら毎ターン：
 
 1. `Read` でアクティブな MD ファイルを再読み込み（ブラウザ保存を拾う）
-2. セクション3の `:::diagram-svg event_flow` とセクション9の DML を照合する
+2. セクション3の `` ```event-flow-svg `` ブロックとセクション9の DML を照合する
 3. 差分があれば DML を `Edit` で更新 → 品質チェックサブエージェントを起動（`references/quality-check-agent.md` 参照）→ render.py を再起動
 4. 差分がなければそのままファシリテーションを継続
 5. フロー図に新しい日本語ラベルが現れたら、セクション10（用語集）にも対応する英語識別子を追記する
@@ -88,10 +88,10 @@ python3 .claude/skills/eventstorming-facilitator/scripts/render.py doc/eventstor
 
 ## Event Flow 記法
 
-ハッピーパスと各代替シナリオをそれぞれ `:::diagram-svg event_flow` で図解する。代替シナリオも必ず図解する（散文テキストのみは不可）。
+ハッピーパスと各代替シナリオをそれぞれ `` ```event-flow-svg `` フェンスで図解する。代替シナリオも必ず図解する（散文テキストのみは不可）。旧記法 `:::diagram-svg event_flow` もレンダラーは後方互換で受け付けるが、新規作成時は `` ```event-flow-svg `` を使う。
 
-```markdown
-:::diagram-svg event_flow
+````markdown
+```event-flow-svg
 title: <タイトル>
 flow:
 |BC名|: <フロー起点の文脈説明（アクター・起動条件など）>
@@ -99,8 +99,8 @@ flow:
   > !コマンド > [イベント] >>
 |BC名|: <遷移の境界説明（何をきっかけに次のレーンへ移るか）>
   $ポリシー > !コマンド > [イベント]
-:::
 ```
+````
 
 **改行ルール**: フロー行は `[イベント]` の直後でテキストとしては改行し、次行は `  > ` で始める（インデント 2 スペース）。1 レーン内でイベントが複数ある場合でも 1 行が長くなりすぎないようにする。レンダリング結果（HTML 図）には影響しない。
 
@@ -158,7 +158,7 @@ flow:
 |---|-----------|--------------|
 | 1 | ハッピーパスストーリー（400〜600字） | フェーズ2 |
 | 2 | 代替シナリオ（散文のみ、図はセクション3に集約） | フェーズ2 |
-| 3 | Event Walkthrough（`:::diagram-svg event_flow` 図） | フェーズ2以降 |
+| 3 | Event Walkthrough（`` ```event-flow-svg `` 図） | フェーズ2以降 |
 | 4 | コンテキスト候補（`### english-name（日本語名）` 形式、`UPSTREAM`/`DOWNSTREAM` 依存方向必須） | フェーズ4完了後 |
 | 5 | 集約候補（**属性を Zod スキーマで記述**・不変条件・状態遷移必須） | フェーズ5完了後 |
 | 6 | リードモデル候補（`### QRY名（日本語名）` 形式） | フェーズ4〜5完了後 |

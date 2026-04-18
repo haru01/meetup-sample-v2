@@ -3,8 +3,11 @@
 EventStorming Facilitator - Self-contained HTML renderer + Alpine.js editor.
 
 Replaces the md2html dependency with a built-in server.
-Only Section 3 (:::diagram-svg event_flow blocks) is editable.
-Browser edits are saved back to the MD file via POST /save.
+Editable blocks (both formats supported):
+  - ```event-flow-svg\n...\n```        (fenced code block, primary)
+  - :::diagram-svg event_flow\n...\n::: (container directive, backward compat)
+Browser edits are saved back to the MD file via POST /save, preserving the
+original delimiter style per block.
 
 Usage:
   python3 render.py <md-file>                  # Start server + open browser
@@ -30,7 +33,55 @@ _MAX_CONTENT_BYTES = 10 * 1024 * 1024  # 10MB
 # Markdown → HTML (minimal, no external dependencies)
 # ============================================================
 
-EF_BLOCK_RE = re.compile(r'(:::diagram-svg event_flow\n.*?:::)', re.DOTALL)
+# Primary: GitHub-style fenced code block with `event-flow-svg` language tag
+_EF_FENCE_RE = re.compile(r'```event-flow-svg\n(.*?)\n```', re.DOTALL)
+# Backward compat: pandoc-style container directive
+_EF_COLON_RE = re.compile(r':::diagram-svg event_flow\n(.*?)\n:::', re.DOTALL)
+
+
+def _extract_ef_blocks(content: str):
+    """Find all event_flow blocks (both delimiter styles) in document order.
+
+    Returns (processed_content, ef_blocks). Each block entry records the
+    original open/close delimiters so edits can be round-tripped without
+    changing the file's delimiter style.
+    """
+    matches = []
+    for m in _EF_FENCE_RE.finditer(content):
+        matches.append(('fence', m.start(), m.end(), m.group(0), m.group(1)))
+    for m in _EF_COLON_RE.finditer(content):
+        matches.append(('colon', m.start(), m.end(), m.group(0), m.group(1)))
+    matches.sort(key=lambda t: t[1])
+
+    # Drop overlapping matches (defensive; should not occur in practice)
+    filtered = []
+    last_end = -1
+    for match in matches:
+        if match[1] >= last_end:
+            filtered.append(match)
+            last_end = match[2]
+
+    ef_blocks = []
+    parts = []
+    pos = 0
+    for kind, start, end, raw, inner in filtered:
+        parts.append(content[pos:start])
+        idx = len(ef_blocks)
+        if kind == 'fence':
+            open_delim, close_delim = '```event-flow-svg', '```'
+        else:
+            open_delim, close_delim = ':::diagram-svg event_flow', ':::'
+        ef_blocks.append({
+            'id': idx,
+            'props': parse_props(inner),
+            'raw': raw,
+            'open': open_delim,
+            'close': close_delim,
+        })
+        parts.append(f'\n<!--EF_{idx}-->\n')
+        pos = end
+    parts.append(content[pos:])
+    return ''.join(parts), ef_blocks
 
 
 _VALID_KEY = re.compile(r'^[a-zA-Z][a-zA-Z0-9_-]*$')
@@ -191,18 +242,7 @@ def build_page(md_path: str) -> str:
     """Read MD, replace event_flow blocks with Alpine.js editors, return full HTML."""
     content = Path(md_path).read_text(encoding='utf-8')
 
-    ef_blocks = []
-
-    def capture(m):
-        raw = m.group(1)
-        inner = re.sub(r'^:::diagram-svg event_flow\n', '', raw)
-        inner = re.sub(r'\n:::$', '', inner)
-        props = parse_props(inner)
-        idx = len(ef_blocks)
-        ef_blocks.append({'id': idx, 'props': props, 'raw': raw})
-        return f'\n<!--EF_{idx}-->\n'
-
-    processed = EF_BLOCK_RE.sub(capture, content)
+    processed, ef_blocks = _extract_ef_blocks(content)
     body_html = md_to_html(processed)
 
     # Inject editor components in place of placeholders
@@ -289,8 +329,11 @@ def build_page(md_path: str) -> str:
 
     original_md_js = json.dumps(content, ensure_ascii=False)
     ef_meta_js = json.dumps(
-        [{'id': b['id'], 'raw': b['raw']} for b in ef_blocks],
-        ensure_ascii=False
+        [
+            {'id': b['id'], 'raw': b['raw'], 'open': b['open'], 'close': b['close']}
+            for b in ef_blocks
+        ],
+        ensure_ascii=False,
     )
 
     return _PAGE_TEMPLATE.format(
@@ -954,8 +997,10 @@ function formatFlowBody(parts, asyncSuffix) {{
   return `  ${{multiline}}${{asyncSuffix}}\\n`;
 }}
 
-function serializeToBlock(groups, title, segLabels) {{
-  let block = `:::diagram-svg event_flow\ntitle: ${{title}}\nflow:\n`;
+function serializeToBlock(groups, title, segLabels, openDelim, closeDelim) {{
+  const open = openDelim || '```event-flow-svg';
+  const close = closeDelim || '```';
+  let block = `${{open}}\ntitle: ${{title}}\nflow:\n`;
 
   groups.forEach((grp, gi) => {{
     const lbl = segLabels[gi] ?? segLabels[String(gi)] ?? '';
@@ -976,7 +1021,7 @@ function serializeToBlock(groups, title, segLabels) {{
     block += formatFlowBody(parts, asyncSuffix);
   }});
 
-  block += ':::';
+  block += close;
   return block;
 }}
 
@@ -1250,10 +1295,13 @@ function efEditor(props, efId) {{
     async save() {{
       this.saveError = null;
       try {{
-        const newBlock = serializeToBlock(this.itemGroups, this.flowTitle, this.segLabels);
         const efMeta = window.__EF_META__;
         const efInfo = efMeta.find(e => e.id === this.efId);
         if (!efInfo) {{ this.saveError = '保存エラー: ブロック情報が見つかりません'; return; }}
+        const newBlock = serializeToBlock(
+          this.itemGroups, this.flowTitle, this.segLabels,
+          efInfo.open, efInfo.close
+        );
 
         let md = window.__ORIGINAL_MD__;
         md = md.replace(efInfo.raw, newBlock);
