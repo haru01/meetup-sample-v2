@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { requireAuth } from '@shared/middleware/auth.middleware';
+import { requireAuth, optionalAuth } from '@shared/middleware/auth.middleware';
 import { createCommunityMemberId } from '@shared/schemas/id-factories';
 import type { AccountId, CommunityId, CommunityMemberId } from '@shared/schemas/common';
 import type { CommunityMember } from '../models/community-member';
@@ -120,7 +120,7 @@ export function createMemberRouter(deps: MemberDependencies): Router {
   /**
    * GET /communities/:id/members — メンバー一覧（Read モデル）
    */
-  router.get('/', requireAuth, async (req: Request, res: Response): Promise<void> => {
+  router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
     const communityId = req.params['id'] as CommunityId;
     const limit = parseInt((req.query['limit'] as string | undefined) ?? '20', 10);
     const offset = parseInt((req.query['offset'] as string | undefined) ?? '0', 10);

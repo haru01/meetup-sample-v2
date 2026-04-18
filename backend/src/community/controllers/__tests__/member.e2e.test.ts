@@ -276,9 +276,23 @@ describe('GET /communities/:id/members — メンバー一覧取得', () => {
   });
 
   describe('認証トークンがない場合', () => {
-    it('401 が返ること', async () => {
+    it('認証なしでもメンバー一覧を参照できること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-anon@example.com',
+        'オーナー匿名'
+      );
+      const communityId = await コミュニティを作成する(owner.token, '匿名閲覧テスト', 'PUBLIC');
+
+      const res = await request(app).get(`/communities/${communityId}/members`).expect(200);
+
+      expect(Array.isArray(res.body.members)).toBe(true);
+      expect(res.body.total).toBe(1);
+      expect(res.body.members[0].accountName).toBe('オーナー匿名');
+    });
+
+    it('存在しないコミュニティは 404 が返ること', async () => {
       const nonExistentId = '00000000-0000-0000-0000-000000000000';
-      await request(app).get(`/communities/${nonExistentId}/members`).expect(401);
+      await request(app).get(`/communities/${nonExistentId}/members`).expect(404);
     });
   });
 });

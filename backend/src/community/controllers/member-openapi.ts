@@ -147,8 +147,8 @@ registry.registerPath({
   path: '/communities/{id}/members',
   tags: ['Members'],
   summary: 'メンバー一覧を取得する',
-  description: 'コミュニティのアクティブメンバー一覧をページネーションで返します。',
-  security: [{ bearerAuth: [] }],
+  description:
+    'コミュニティのアクティブメンバー一覧をページネーションで返します。未ログインでも参照可能です。',
   request: {
     params: z.object({
       id: UuidSchema.openapi({ description: 'コミュニティID' }),
@@ -168,10 +168,6 @@ registry.registerPath({
     200: {
       description: 'メンバー一覧取得成功',
       content: { 'application/json': { schema: MemberListResponseSchema } },
-    },
-    401: {
-      description: '認証エラー',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
     },
     404: {
       description: 'コミュニティが見つからない',
