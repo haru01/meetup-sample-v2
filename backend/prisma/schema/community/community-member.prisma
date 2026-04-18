@@ -15,6 +15,7 @@ model CommunityMember {
 
   @@unique([communityId, accountId])
   @@index([accountId])
+  @@index([communityId, status, createdAt])
 }
 
 enum CommunityMemberRole {
