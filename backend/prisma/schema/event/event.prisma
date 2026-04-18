@@ -21,7 +21,7 @@ model Event {
   participations   Participation[]
   checkins         CheckIn[]
 
-  @@index([communityId])
+  @@index([communityId, status])
 }
 
 enum EventFormat {

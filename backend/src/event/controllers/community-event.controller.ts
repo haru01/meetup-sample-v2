@@ -32,18 +32,40 @@ function toEventResponse(event: Event): Record<string, unknown> {
   };
 }
 
+function buildListCommunityEventsWhere(
+  communityId: string,
+  accountId: string | undefined
+): { communityId: string; OR?: Array<Record<string, unknown>>; status?: { not: 'DRAFT' } } {
+  if (accountId) {
+    return {
+      communityId,
+      OR: [{ status: { not: 'DRAFT' } }, { createdBy: accountId }],
+    };
+  }
+  return { communityId, status: { not: 'DRAFT' } };
+}
+
 function listCommunityEventsHandler(prisma: PrismaClient) {
   return async (req: Request, res: Response): Promise<void> => {
     try {
       const communityId = req.params['id'] as string;
       const accountId = req.accountId;
-      const rows = await prisma.event.findMany({
-        where: { communityId },
-        orderBy: { startsAt: 'asc' },
-      });
-      const filtered = rows.filter((r) => r.status !== 'DRAFT' || r.createdBy === accountId);
+      const limit = typeof req.query['limit'] === 'number' ? req.query['limit'] : 20;
+      const offset = typeof req.query['offset'] === 'number' ? req.query['offset'] : 0;
+      const where = buildListCommunityEventsWhere(communityId, accountId);
+
+      const [rows, total] = await prisma.$transaction([
+        prisma.event.findMany({
+          where,
+          orderBy: { startsAt: 'asc' },
+          take: limit,
+          skip: offset,
+        }),
+        prisma.event.count({ where }),
+      ]);
+
       res.status(200).json({
-        events: filtered.map((r) => ({
+        events: rows.map((r) => ({
           id: r.id,
           communityId: r.communityId,
           title: r.title,
@@ -53,6 +75,7 @@ function listCommunityEventsHandler(prisma: PrismaClient) {
           format: r.format,
           capacity: r.capacity,
         })),
+        total,
       });
     } catch (err) {
       console.error('[GET /communities/:id/events] Error:', err);

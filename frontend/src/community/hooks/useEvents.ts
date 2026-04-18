@@ -2,8 +2,18 @@ import { useState, useCallback } from "react";
 import { apiClient } from "../../lib/api-client";
 import type { Event, EventResponse, CreateEventRequest } from "../types";
 
-type CommunityEvent = Pick<Event, 'id' | 'communityId' | 'title' | 'status' | 'startsAt' | 'endsAt' | 'format' | 'capacity'>;
-type ListCommunityEventsResponse = { events: CommunityEvent[] };
+type CommunityEvent = Pick<
+  Event,
+  | "id"
+  | "communityId"
+  | "title"
+  | "status"
+  | "startsAt"
+  | "endsAt"
+  | "format"
+  | "capacity"
+>;
+type ListCommunityEventsResponse = { events: CommunityEvent[]; total?: number };
 
 export const useEvents = () => {
   const [loading, setLoading] = useState(false);
@@ -32,19 +42,22 @@ export const useEvents = () => {
     [],
   );
 
-  const listCommunityEvents = useCallback(async (communityId: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    const result = await apiClient.get<ListCommunityEventsResponse>(
-      `/communities/${communityId}/events`,
-    );
-    if (result.ok) {
-      setCommunityEvents(result.data.events);
-    } else {
-      setError("イベント一覧の取得に失敗しました");
-    }
-    setLoading(false);
-  }, []);
+  const listCommunityEvents = useCallback(
+    async (communityId: string): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      const result = await apiClient.get<ListCommunityEventsResponse>(
+        `/communities/${communityId}/events`,
+      );
+      if (result.ok) {
+        setCommunityEvents(result.data.events);
+      } else {
+        setError("イベント一覧の取得に失敗しました");
+      }
+      setLoading(false);
+    },
+    [],
+  );
 
   return { createEvent, listCommunityEvents, communityEvents, loading, error };
 };
