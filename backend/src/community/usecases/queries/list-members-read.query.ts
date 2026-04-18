@@ -29,6 +29,7 @@ export interface ListMembersReadInput {
   readonly communityId: CommunityId;
   readonly limit: number;
   readonly offset: number;
+  readonly requestingAccountId?: AccountId;
 }
 
 export type ListMembersReadResult = {
@@ -40,32 +41,68 @@ export type ListMembersReadQuery = (
   command: ListMembersReadInput
 ) => Promise<Result<ListMembersReadResult, ListMembersError>>;
 
+/**
+ * 閲覧可能性チェック: PUBLIC は誰でも、PRIVATE は ACTIVE メンバーのみ。
+ * 非公開条件を満たさない場合は CommunityNotFound を返す（存在の有無を漏らさない）。
+ */
+async function checkVisibility(
+  prisma: PrismaClient,
+  communityId: CommunityId,
+  requestingAccountId: AccountId | undefined
+): Promise<Result<void, ListMembersError>> {
+  const community = await prisma.community.findUnique({
+    where: { id: communityId },
+    select: { visibility: true },
+  });
+  if (!community) {
+    return err({ type: 'CommunityNotFound' });
+  }
+  if (community.visibility !== 'PRIVATE') {
+    return ok(undefined);
+  }
+  if (!requestingAccountId) {
+    return err({ type: 'CommunityNotFound' });
+  }
+  const requestingMember = await prisma.communityMember.findUnique({
+    where: { communityId_accountId: { communityId, accountId: requestingAccountId } },
+    select: { status: true },
+  });
+  if (!requestingMember || requestingMember.status !== 'ACTIVE') {
+    return err({ type: 'CommunityNotFound' });
+  }
+  return ok(undefined);
+}
+
+/**
+ * メンバー一覧取得ユースケース（Read モデル）
+ *
+ * PUBLIC は誰でも閲覧可能。PRIVATE は ACTIVE メンバーのみ閲覧可能。
+ */
 export function createListMembersReadQuery(prisma: PrismaClient): ListMembersReadQuery {
   return async (command) => {
-    const memberWhere = { communityId: command.communityId, status: 'ACTIVE' as const };
+    const visibilityResult = await checkVisibility(
+      prisma,
+      command.communityId,
+      command.requestingAccountId
+    );
+    if (!visibilityResult.ok) {
+      return visibilityResult;
+    }
 
-    const [community, total] = await prisma.$transaction([
-      prisma.community.findUnique({
-        where: { id: command.communityId },
-        include: {
-          members: {
-            where: { status: 'ACTIVE' },
-            include: { account: { select: { name: true } } },
-            orderBy: { createdAt: 'asc' },
-            take: command.limit,
-            skip: command.offset,
-          },
-        },
+    const memberWhere = { communityId: command.communityId, status: 'ACTIVE' as const };
+    const [members, total] = await prisma.$transaction([
+      prisma.communityMember.findMany({
+        where: memberWhere,
+        include: { account: { select: { name: true } } },
+        orderBy: { createdAt: 'asc' },
+        take: command.limit,
+        skip: command.offset,
       }),
       prisma.communityMember.count({ where: memberWhere }),
     ]);
 
-    if (!community) {
-      return err({ type: 'CommunityNotFound' });
-    }
-
     return ok({
-      members: community.members.map((r) => ({
+      members: members.map((r) => ({
         id: r.id as CommunityMemberId,
         communityId: r.communityId as CommunityId,
         accountId: r.accountId as AccountId,

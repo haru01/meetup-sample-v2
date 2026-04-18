@@ -276,7 +276,7 @@ describe('GET /communities/:id/members — メンバー一覧取得', () => {
   });
 
   describe('認証トークンがない場合', () => {
-    it('認証なしでもメンバー一覧を参照できること', async () => {
+    it('PUBLIC コミュニティは認証なしでもメンバー一覧を参照できること', async () => {
       const owner = await アカウントを登録してトークンを取得する(
         'owner-anon@example.com',
         'オーナー匿名'
@@ -293,6 +293,93 @@ describe('GET /communities/:id/members — メンバー一覧取得', () => {
     it('存在しないコミュニティは 404 が返ること', async () => {
       const nonExistentId = '00000000-0000-0000-0000-000000000000';
       await request(app).get(`/communities/${nonExistentId}/members`).expect(404);
+    });
+
+    it('PRIVATE コミュニティは認証なしでは 404 が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-private-anon@example.com',
+        'オーナー private 匿名'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'プライベート匿名テスト',
+        'PRIVATE'
+      );
+
+      const res = await request(app).get(`/communities/${communityId}/members`).expect(404);
+      expect(res.body.code).toBe('COMMUNITY_NOT_FOUND');
+    });
+  });
+
+  describe('PRIVATE コミュニティの場合', () => {
+    it('非メンバーのアカウントでは 404 が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-private-nonmember@example.com',
+        'オーナー private'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'プライベート非メンバーテスト',
+        'PRIVATE'
+      );
+
+      const stranger = await アカウントを登録してトークンを取得する(
+        'stranger@example.com',
+        '部外者'
+      );
+
+      const res = await request(app)
+        .get(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${stranger.token}`)
+        .expect(404);
+      expect(res.body.code).toBe('COMMUNITY_NOT_FOUND');
+    });
+
+    it('PENDING メンバーでは 404 が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-private-pending@example.com',
+        'オーナー private pending'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'プライベート PENDING テスト',
+        'PRIVATE'
+      );
+
+      const pendingMember = await アカウントを登録してトークンを取得する(
+        'pending@example.com',
+        'PENDING メンバー'
+      );
+      // PRIVATE では PENDING で参加する
+      await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${pendingMember.token}`)
+        .expect(201);
+
+      const res = await request(app)
+        .get(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${pendingMember.token}`)
+        .expect(404);
+      expect(res.body.code).toBe('COMMUNITY_NOT_FOUND');
+    });
+
+    it('ACTIVE メンバーでは 200 が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-private-active@example.com',
+        'オーナー private active'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'プライベート ACTIVE テスト',
+        'PRIVATE'
+      );
+
+      const res = await request(app)
+        .get(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+      expect(res.body.total).toBe(1);
+      expect(res.body.members[0].accountName).toBe('オーナー private active');
     });
   });
 });

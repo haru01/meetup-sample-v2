@@ -124,8 +124,14 @@ export function createMemberRouter(deps: MemberDependencies): Router {
     const communityId = req.params['id'] as CommunityId;
     const limit = parseInt((req.query['limit'] as string | undefined) ?? '20', 10);
     const offset = parseInt((req.query['offset'] as string | undefined) ?? '0', 10);
+    const requestingAccountId = req.accountId as AccountId | undefined;
 
-    const result = await listMembersReadQuery({ communityId, limit, offset });
+    const result = await listMembersReadQuery({
+      communityId,
+      limit,
+      offset,
+      requestingAccountId,
+    });
 
     if (!result.ok) {
       const { status, response } = mapListMembersErrorToResponse(result.error);
