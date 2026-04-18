@@ -12,6 +12,7 @@ import type {
   NotificationRepository,
   NotificationRecord,
 } from '@notification/repositories/notification.repository';
+import type { NotificationType } from '@notification/models/schemas/notification.schema';
 import {
   createCreateEventCommand,
   type CreateEventCommand,
@@ -121,6 +122,72 @@ export function createEventDependencies(
 // ポリシー登録
 // ============================================================
 
+/**
+ * 通知ポリシーで参照する参加ステータス（event は participation に依存できないためローカル定義）。
+ * 値は `prisma/schema/participation/participation.prisma` の ParticipationStatus enum と同期させる。
+ */
+type ParticipationStatusRef = 'APPLIED' | 'APPROVED' | 'WAITLISTED' | 'CANCELLED';
+
+/** 通知ポリシーのチャンクサイズ（findMany + createMany 一括単位） */
+const NOTIFICATION_BATCH_SIZE = 200;
+
+/**
+ * 指定ステータスに該当する参加者 accountId を cursor pagination で
+ * チャンク単位にストリームする非同期ジェネレータ。
+ *
+ * 参加者が数百〜数千人規模のイベントでも、findMany で全件メモリに
+ * 載せることなく固定サイズのバッチを順次流すことを目的とする。
+ */
+async function* streamParticipantsByStatus(
+  prisma: PrismaClient,
+  eventId: string,
+  statuses: readonly ParticipationStatusRef[],
+  batchSize: number
+): AsyncGenerator<string[]> {
+  let cursor: string | undefined;
+  for (;;) {
+    const batch = await prisma.participation.findMany({
+      where: { eventId, status: { in: [...statuses] } },
+      select: { id: true, accountId: true },
+      orderBy: { id: 'asc' },
+      take: batchSize,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    if (batch.length === 0) return;
+    yield batch.map((p) => p.accountId);
+    if (batch.length < batchSize) return;
+    cursor = batch[batch.length - 1]?.id;
+    if (!cursor) return;
+  }
+}
+
+/**
+ * 指定ステータスに該当する参加者へ通知をバッチ保存する。
+ * cursor pagination でチャンク取得し、チャンク毎に createMany で一括 insert する。
+ */
+async function notifyParticipants(
+  prisma: PrismaClient,
+  notificationRepository: NotificationRepository,
+  eventId: string,
+  statuses: readonly ParticipationStatusRef[],
+  type: NotificationType
+): Promise<void> {
+  const payload = JSON.stringify({ eventId });
+  for await (const accountIds of streamParticipantsByStatus(
+    prisma,
+    eventId,
+    statuses,
+    NOTIFICATION_BATCH_SIZE
+  )) {
+    const records: NotificationRecord[] = accountIds.map((accountId) => ({
+      type,
+      recipientId: accountId,
+      payload,
+    }));
+    await notificationRepository.saveMany(records);
+  }
+}
+
 function registerPolicies(
   prisma: PrismaClient,
   notificationRepository: NotificationRepository,
@@ -128,43 +195,22 @@ function registerPolicies(
 ): void {
   // SendSurveyOnClose: EventClosed → APPROVED 参加者に SURVEY 通知
   eventBus.subscribe('EventClosed', async ({ eventId }) => {
-    const participations = await prisma.participation.findMany({
-      where: { eventId, status: 'APPROVED' },
-      select: { accountId: true },
-    });
-    const records: NotificationRecord[] = participations.map((p) => ({
-      type: 'SURVEY',
-      recipientId: p.accountId,
-      payload: JSON.stringify({ eventId }),
-    }));
-    await notificationRepository.saveMany(records);
+    await notifyParticipants(prisma, notificationRepository, eventId, ['APPROVED'], 'SURVEY');
   });
 
   // NotifyEventCancelled: EventCancelled → APPROVED + WAITLISTED 参加者に EVENT_CANCELLED 通知
   eventBus.subscribe('EventCancelled', async ({ eventId }) => {
-    const participations = await prisma.participation.findMany({
-      where: { eventId, status: { in: ['APPROVED', 'WAITLISTED'] } },
-      select: { accountId: true },
-    });
-    const records: NotificationRecord[] = participations.map((p) => ({
-      type: 'EVENT_CANCELLED',
-      recipientId: p.accountId,
-      payload: JSON.stringify({ eventId }),
-    }));
-    await notificationRepository.saveMany(records);
+    await notifyParticipants(
+      prisma,
+      notificationRepository,
+      eventId,
+      ['APPROVED', 'WAITLISTED'],
+      'EVENT_CANCELLED'
+    );
   });
 
   // SendReminder: EventDateApproached → APPROVED 参加者に REMINDER 通知
   eventBus.subscribe('EventDateApproached', async ({ eventId }) => {
-    const participations = await prisma.participation.findMany({
-      where: { eventId, status: 'APPROVED' },
-      select: { accountId: true },
-    });
-    const records: NotificationRecord[] = participations.map((p) => ({
-      type: 'REMINDER',
-      recipientId: p.accountId,
-      payload: JSON.stringify({ eventId }),
-    }));
-    await notificationRepository.saveMany(records);
+    await notifyParticipants(prisma, notificationRepository, eventId, ['APPROVED'], 'REMINDER');
   });
 }
