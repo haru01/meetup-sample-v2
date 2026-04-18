@@ -373,7 +373,7 @@ registry.registerPath({
       description: 'リマインダー発行成功',
       content: {
         'application/json': {
-          schema: z.object({ processed: z.number().int() }).openapi('SchedulerResult'),
+          schema: z.object({ detected: z.number().int() }).openapi('SchedulerResult'),
         },
       },
     },

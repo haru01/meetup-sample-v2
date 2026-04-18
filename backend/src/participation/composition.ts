@@ -5,10 +5,11 @@ import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
 import { PrismaEventRepository } from '@event/repositories/prisma-event.repository';
 import { PrismaParticipationRepository } from './repositories/prisma-participation.repository';
-import {
-  PrismaNotificationRepository,
-  type NotificationRepository,
-} from './repositories/prisma-notification.repository';
+import type { ParticipationRepository } from './repositories/participation.repository';
+import { PrismaNotificationRepository } from '@notification/repositories/prisma-notification.repository';
+import type { NotificationRepository } from '@notification/repositories/notification.repository';
+import { createSendWaitlistPromotionNotificationCommand } from '@notification/usecases/commands/send-waitlist-promotion-notification.usecase';
+import { createNotifyOrganizerCommand } from '@notification/usecases/commands/notify-organizer.usecase';
 import {
   createApplyForEventCommand,
   type ApplyForEventCommand,
@@ -92,47 +93,7 @@ export function createParticipationDependencies(
   );
   const getMyParticipationsQuery = createGetMyParticipationsQuery(prisma);
 
-  // --- Policies ---
-
-  // SendApprovalNotification: 承認されたら APPROVAL 通知
-  eventBus.subscribe('ParticipationApproved', async (event) => {
-    await notificationRepository.create(
-      NotificationType.APPROVAL,
-      event.accountId,
-      JSON.stringify({ participationId: event.participationId, eventId: event.eventId })
-    );
-  });
-
-  // PromoteFromWaitlist & NotifyOrganizerOnCancel
-  eventBus.subscribe('ParticipationCancelled', async (event) => {
-    // 主催者に PARTICIPANT_CANCELLED 通知
-    const eventRecord = await prisma.event.findUnique({
-      where: { id: event.eventId },
-      select: { createdBy: true },
-    });
-    if (eventRecord) {
-      await notificationRepository.create(
-        NotificationType.PARTICIPANT_CANCELLED,
-        eventRecord.createdBy,
-        JSON.stringify({ participationId: event.participationId, eventId: event.eventId })
-      );
-    }
-
-    // キャンセル待ち先頭を昇格
-    const first = await participationRepository.findFirstWaitlisted(event.eventId);
-    if (!first) return;
-    const promoted = promoteFromWaitlist(first);
-    if (!promoted.ok) return;
-    await participationRepository.save(promoted.value);
-    await notificationRepository.create(
-      NotificationType.WAITLIST_PROMOTED,
-      promoted.value.accountId,
-      JSON.stringify({
-        participationId: promoted.value.id,
-        eventId: promoted.value.eventId,
-      })
-    );
-  });
+  registerParticipationPolicies(prisma, participationRepository, notificationRepository, eventBus);
 
   // --- Routers ---
   const participationRouter = createParticipationRouter({
@@ -156,4 +117,66 @@ export function createParticipationDependencies(
     participationRouter,
     participationSelfRouter,
   };
+}
+
+// ============================================================
+// ポリシー登録
+// ============================================================
+
+function registerParticipationPolicies(
+  prisma: PrismaClient,
+  participationRepository: ParticipationRepository,
+  notificationRepository: NotificationRepository,
+  eventBus: InMemoryEventBus<MeetupDomainEvent>
+): void {
+  const sendWaitlistPromotionNotification =
+    createSendWaitlistPromotionNotificationCommand(notificationRepository);
+  const notifyOrganizer = createNotifyOrganizerCommand(notificationRepository);
+
+  // SendApprovalNotification: 承認されたら APPROVAL 通知
+  eventBus.subscribe('ParticipationApproved', async (event) => {
+    await notificationRepository.create(
+      NotificationType.APPROVAL,
+      event.accountId,
+      JSON.stringify({ participationId: event.participationId, eventId: event.eventId })
+    );
+  });
+
+  // NotifyOrganizerOnCancel: ParticipationCancelled → 主催者に PARTICIPANT_CANCELLED 通知
+  eventBus.subscribe('ParticipationCancelled', async (event) => {
+    const eventRecord = await prisma.event.findUnique({
+      where: { id: event.eventId },
+      select: { createdBy: true },
+    });
+    if (!eventRecord) return;
+    await notifyOrganizer({
+      participationId: event.participationId,
+      eventId: event.eventId,
+      organizerId: eventRecord.createdBy,
+    });
+  });
+
+  // PromoteFromWaitlist: ParticipationCancelled → キャンセル待ち先頭を昇格 + WaitlistPromoted を publish
+  eventBus.subscribe('ParticipationCancelled', async (event) => {
+    const first = await participationRepository.findFirstWaitlisted(event.eventId);
+    if (!first) return;
+    const promoted = promoteFromWaitlist(first);
+    if (!promoted.ok) return;
+    await participationRepository.save(promoted.value);
+    await eventBus.publish({
+      type: 'WaitlistPromoted',
+      participationId: promoted.value.id,
+      eventId: promoted.value.eventId,
+      accountId: promoted.value.accountId,
+    });
+  });
+
+  // NotifyWaitlistPromotion: WaitlistPromoted → 繰り上がり本人に WAITLIST_PROMOTED 通知
+  eventBus.subscribe('WaitlistPromoted', async (event) => {
+    await sendWaitlistPromotionNotification({
+      participationId: event.participationId,
+      eventId: event.eventId,
+      accountId: event.accountId,
+    });
+  });
 }

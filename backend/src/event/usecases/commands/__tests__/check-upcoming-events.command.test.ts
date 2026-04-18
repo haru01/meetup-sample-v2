@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
-import { createSendRemindersCommand } from '../send-reminders.command';
+import { createCheckUpcomingEventsCommand } from '../check-upcoming-events.command';
 import type { EventRepository } from '../../../repositories/event.repository';
 import type { Event } from '../../../models/event';
 import { createEventId, createCommunityId, createAccountId } from '@shared/schemas/id-factories';
@@ -31,7 +31,7 @@ const makeEventRepository = (events: Event[]): EventRepository => ({
   save: vi.fn().mockResolvedValue(undefined),
 });
 
-describe('SendRemindersCommand', () => {
+describe('CheckUpcomingEventsCommand', () => {
   let eventBus: InMemoryEventBus<MeetupDomainEvent>;
   let publishSpy: ReturnType<typeof vi.fn<(event: MeetupDomainEvent) => Promise<void>>>;
 
@@ -42,14 +42,14 @@ describe('SendRemindersCommand', () => {
   });
 
   describe('正常系', () => {
-    it('window 内のイベントを取得し EventDateApproached を発火する', async () => {
+    it('window 内のイベントを検知し EventDateApproached を発火する', async () => {
       const events = [makeEvent({ id: createEventId('event-1') })];
       const repository = makeEventRepository(events);
-      const command = createSendRemindersCommand(repository, eventBus);
+      const command = createCheckUpcomingEventsCommand(repository, eventBus);
 
       const result = await command({ now, windowStartHours: 20, windowEndHours: 28 });
 
-      expect(result.processed).toBe(1);
+      expect(result.detected).toBe(1);
       expect(repository.findUpcoming).toHaveBeenCalledWith(
         new Date(now.getTime() + 20 * 60 * 60 * 1000),
         new Date(now.getTime() + 28 * 60 * 60 * 1000)
@@ -68,21 +68,21 @@ describe('SendRemindersCommand', () => {
         makeEvent({ id: createEventId('event-3') }),
       ];
       const repository = makeEventRepository(events);
-      const command = createSendRemindersCommand(repository, eventBus);
+      const command = createCheckUpcomingEventsCommand(repository, eventBus);
 
       const result = await command({ now, windowStartHours: 20, windowEndHours: 28 });
 
-      expect(result.processed).toBe(3);
+      expect(result.detected).toBe(3);
       expect(publishSpy).toHaveBeenCalledTimes(3);
     });
 
-    it('対象イベントが 0 件の場合は processed: 0 を返す', async () => {
+    it('対象イベントが 0 件の場合は detected: 0 を返す', async () => {
       const repository = makeEventRepository([]);
-      const command = createSendRemindersCommand(repository, eventBus);
+      const command = createCheckUpcomingEventsCommand(repository, eventBus);
 
       const result = await command({ now, windowStartHours: 20, windowEndHours: 28 });
 
-      expect(result.processed).toBe(0);
+      expect(result.detected).toBe(0);
       expect(publishSpy).not.toHaveBeenCalled();
     });
   });

@@ -3,32 +3,34 @@ import type { MeetupDomainEvent } from '@shared/domain-events';
 import type { EventRepository } from '../../repositories/event.repository';
 
 // ============================================================
-// リマインダー送信コマンド
+// 開催日接近検知コマンド
 // ============================================================
 
-export interface SendRemindersInput {
+export interface CheckUpcomingEventsInput {
   readonly now: Date;
   readonly windowStartHours: number;
   readonly windowEndHours: number;
 }
 
-export interface SendRemindersResult {
-  readonly processed: number;
+export interface CheckUpcomingEventsResult {
+  readonly detected: number;
 }
 
-export type SendRemindersCommand = (input: SendRemindersInput) => Promise<SendRemindersResult>;
+export type CheckUpcomingEventsCommand = (
+  input: CheckUpcomingEventsInput
+) => Promise<CheckUpcomingEventsResult>;
 
 /**
- * リマインダー送信バッチユースケース
+ * 開催日接近検知バッチユースケース
  *
  * now + windowStartHours 〜 now + windowEndHours に startsAt がある PUBLISHED
  * イベントを取得し、各イベントに対し EventDateApproached を publish する。
  * 実際のリマインダー通知は event/composition の SendReminder ポリシーが行う。
  */
-export function createSendRemindersCommand(
+export function createCheckUpcomingEventsCommand(
   eventRepository: EventRepository,
   eventBus: InMemoryEventBus<MeetupDomainEvent>
-): SendRemindersCommand {
+): CheckUpcomingEventsCommand {
   return async ({ now, windowStartHours, windowEndHours }) => {
     const from = new Date(now.getTime() + windowStartHours * 60 * 60 * 1000);
     const to = new Date(now.getTime() + windowEndHours * 60 * 60 * 1000);
@@ -39,6 +41,6 @@ export function createSendRemindersCommand(
       await eventBus.publish({ type: 'EventDateApproached', eventId: event.id });
     }
 
-    return { processed: events.length };
+    return { detected: events.length };
   };
 }

@@ -83,7 +83,7 @@ describe('POST /scheduler/send-reminders', () => {
   }
 
   describe('SCHEDULER_SECRET が設定されていて secret ヘッダが一致する場合', () => {
-    it('20-28 時間後に開始する PUBLISHED イベントが存在すると 200 と processed:1 を返し、REMINDER 通知が保存されること', async () => {
+    it('20-28 時間後に開始する PUBLISHED イベントが存在すると 200 と detected:1 を返し、REMINDER 通知が保存されること', async () => {
       vi.stubEnv('SCHEDULER_SECRET', 'test-secret');
       const startsAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const { eventId } = await 公開イベントと承認済み参加を作成する({ startsAt });
@@ -93,14 +93,14 @@ describe('POST /scheduler/send-reminders', () => {
         .set('X-Scheduler-Secret', 'test-secret')
         .expect(200);
 
-      expect(response.body).toEqual({ processed: 1 });
+      expect(response.body).toEqual({ detected: 1 });
 
       const notifications = await prisma.notification.findMany({ where: { type: 'REMINDER' } });
       expect(notifications).toHaveLength(1);
       expect(notifications[0]?.payload).toContain(eventId);
     });
 
-    it('window 外に開始するイベントしか存在しない場合は 200 と processed:0 を返し、通知は保存されないこと', async () => {
+    it('window 外に開始するイベントしか存在しない場合は 200 と detected:0 を返し、通知は保存されないこと', async () => {
       vi.stubEnv('SCHEDULER_SECRET', 'test-secret');
       const startsAt = new Date(Date.now() + 5 * 60 * 60 * 1000);
       await 公開イベントと承認済み参加を作成する({ startsAt });
@@ -110,7 +110,7 @@ describe('POST /scheduler/send-reminders', () => {
         .set('X-Scheduler-Secret', 'test-secret')
         .expect(200);
 
-      expect(response.body).toEqual({ processed: 0 });
+      expect(response.body).toEqual({ detected: 0 });
       const notifications = await prisma.notification.findMany({ where: { type: 'REMINDER' } });
       expect(notifications).toHaveLength(0);
     });

@@ -7,11 +7,11 @@ import { PrismaCommunityRepository } from '@community/repositories/prisma-commun
 import { PrismaCommunityMemberRepository } from '@community/repositories/prisma-community-member.repository';
 import { CommunityMemberRole } from '@community/models/schemas/member.schema';
 import { PrismaEventRepository } from './repositories/prisma-event.repository';
-import {
-  PrismaNotificationRepository,
-  type NotificationRepository,
-  type NotificationRecord,
-} from './repositories/notification.repository';
+import { PrismaNotificationRepository } from '@notification/repositories/prisma-notification.repository';
+import type {
+  NotificationRepository,
+  NotificationRecord,
+} from '@notification/repositories/notification.repository';
 import {
   createCreateEventCommand,
   type CreateEventCommand,
@@ -33,9 +33,9 @@ import {
   type CancelEventCommand,
 } from './usecases/commands/cancel-event.command';
 import {
-  createSendRemindersCommand,
-  type SendRemindersCommand,
-} from './usecases/commands/send-reminders.command';
+  createCheckUpcomingEventsCommand,
+  type CheckUpcomingEventsCommand,
+} from './usecases/commands/check-upcoming-events.command';
 import {
   createListPublishedEventsQuery,
   type ListPublishedEventsQuery,
@@ -56,7 +56,7 @@ export interface EventContextDependencies {
   readonly publishEventCommand: PublishEventCommand;
   readonly updateEventCommand: UpdateEventCommand;
   readonly closeEventCommand: CloseEventCommand;
-  readonly sendRemindersCommand: SendRemindersCommand;
+  readonly checkUpcomingEventsCommand: CheckUpcomingEventsCommand;
   readonly cancelEventCommand: CancelEventCommand;
   readonly eventRouter: Router;
   readonly communityEventRouter: Router;
@@ -79,7 +79,7 @@ export function createEventDependencies(
   const updateEventCommand = createUpdateEventCommand(eventRepository);
   const closeEventCommand = createCloseEventCommand(eventRepository, eventBus);
   const cancelEventCommand = createCancelEventCommand(eventRepository, eventBus);
-  const sendRemindersCommand = createSendRemindersCommand(eventRepository, eventBus);
+  const checkUpcomingEventsCommand = createCheckUpcomingEventsCommand(eventRepository, eventBus);
 
   registerPolicies(prisma, notificationRepository, eventBus);
 
@@ -100,7 +100,7 @@ export function createEventDependencies(
     ),
     prisma,
   });
-  const schedulerRouter = createSchedulerRouter({ sendRemindersCommand });
+  const schedulerRouter = createSchedulerRouter({ checkUpcomingEventsCommand });
 
   return {
     listPublishedEventsQuery,
@@ -110,7 +110,7 @@ export function createEventDependencies(
     updateEventCommand,
     closeEventCommand,
     cancelEventCommand,
-    sendRemindersCommand,
+    checkUpcomingEventsCommand,
     eventRouter,
     communityEventRouter,
     schedulerRouter,

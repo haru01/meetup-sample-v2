@@ -40,6 +40,7 @@ export default defineConfig({
       '@event': path.resolve(__dirname, 'src/event'),
       '@participation': path.resolve(__dirname, 'src/participation'),
       '@checkin': path.resolve(__dirname, 'src/checkin'),
+      '@notification': path.resolve(__dirname, 'src/notification'),
     },
   },
 });

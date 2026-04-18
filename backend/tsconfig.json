@@ -25,7 +25,8 @@
       "@community/*": ["src/community/*"],
       "@event/*": ["src/event/*"],
       "@participation/*": ["src/participation/*"],
-      "@checkin/*": ["src/checkin/*"]
+      "@checkin/*": ["src/checkin/*"],
+      "@notification/*": ["src/notification/*"]
     }
   },
   "include": ["src"],
