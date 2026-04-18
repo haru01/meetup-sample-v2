@@ -143,7 +143,7 @@ export function createMemberRouter(deps: MemberDependencies): Router {
       members: result.value.members.map((m) => ({
         id: m.id,
         communityId: m.communityId,
-        accountId: m.accountId,
+        ...(m.accountId !== undefined ? { accountId: m.accountId } : {}),
         accountName: m.accountName,
         role: m.role,
         status: m.status,

@@ -18,9 +18,16 @@ const MemberResponseSchema = z
   })
   .openapi('MemberResponse');
 
-const MemberReadSchema = MemberResponseSchema.extend({
-  accountName: z.string().openapi({ description: 'アカウント名', example: '山田太郎' }),
-}).openapi('MemberRead');
+// 一覧レスポンスでは accountId を optional にする。
+// ACTIVE メンバー以外の requester には accountId を返さないため。
+const MemberReadSchema = MemberResponseSchema.omit({ accountId: true })
+  .extend({
+    accountId: UuidSchema.optional().openapi({
+      description: 'アカウントID（ACTIVE メンバーのみ閲覧可能）',
+    }),
+    accountName: z.string().openapi({ description: 'アカウント名', example: '山田太郎' }),
+  })
+  .openapi('MemberRead');
 
 const MemberListResponseSchema = z
   .object({

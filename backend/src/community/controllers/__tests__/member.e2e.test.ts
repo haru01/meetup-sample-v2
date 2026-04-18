@@ -383,6 +383,65 @@ describe('GET /communities/:id/members — メンバー一覧取得', () => {
     });
   });
 
+  describe('accountId の可視性（列挙防止）', () => {
+    it('未ログイン requester には accountId を返さないこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-anon-acct@example.com',
+        'オーナー匿名 acct'
+      );
+      const communityId = await コミュニティを作成する(owner.token, '匿名acct テスト', 'PUBLIC');
+
+      const res = await request(app).get(`/communities/${communityId}/members`).expect(200);
+
+      expect(res.body.total).toBe(1);
+      expect(res.body.members[0].accountId).toBeUndefined();
+      expect(res.body.members[0].accountName).toBe('オーナー匿名 acct');
+    });
+
+    it('ログイン済みだが非メンバーの requester には accountId を返さないこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-nonmember-acct@example.com',
+        'オーナー nonmember'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        '非メンバーacct テスト',
+        'PUBLIC'
+      );
+      const stranger = await アカウントを登録してトークンを取得する(
+        'stranger-acct@example.com',
+        '部外者 acct'
+      );
+
+      const res = await request(app)
+        .get(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${stranger.token}`)
+        .expect(200);
+
+      expect(res.body.members[0].accountId).toBeUndefined();
+    });
+
+    it('ACTIVE メンバーの requester には accountId を返すこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-member-acct@example.com',
+        'オーナー member'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'ACTIVEメンバーacct テスト',
+        'PUBLIC'
+      );
+
+      const res = await request(app)
+        .get(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+
+      expect(res.body.members[0].accountId).toBeDefined();
+      expect(typeof res.body.members[0].accountId).toBe('string');
+    });
+  });
+
   describe('limit/offset の検証', () => {
     it('limit=999999 など上限 100 を超える場合は 400 を返すこと', async () => {
       const owner = await アカウントを登録してトークンを取得する(

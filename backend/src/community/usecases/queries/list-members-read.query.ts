@@ -14,7 +14,11 @@ import type { ListMembersError } from '../../errors/community-errors';
 export interface MemberReadModel {
   readonly id: CommunityMemberId;
   readonly communityId: CommunityId;
-  readonly accountId: AccountId;
+  /**
+   * accountId は requester が当該コミュニティの ACTIVE メンバーである場合のみ含める。
+   * 未ログイン・非メンバーには返さず、アカウント列挙による相関分析を防ぐ。
+   */
+  readonly accountId?: AccountId;
   readonly accountName: string;
   readonly role: CommunityMemberRole;
   readonly status: CommunityMemberStatus;
@@ -44,12 +48,14 @@ export type ListMembersReadQuery = (
 /**
  * 閲覧可能性チェック: PUBLIC は誰でも、PRIVATE は ACTIVE メンバーのみ。
  * 非公開条件を満たさない場合は CommunityNotFound を返す（存在の有無を漏らさない）。
+ * isActiveMember は requester が当該コミュニティの ACTIVE メンバーであるかを示し、
+ * accountId 可視性制御に利用する。
  */
 async function checkVisibility(
   prisma: PrismaClient,
   communityId: CommunityId,
   requestingAccountId: AccountId | undefined
-): Promise<Result<void, ListMembersError>> {
+): Promise<Result<{ isActiveMember: boolean }, ListMembersError>> {
   const community = await prisma.community.findUnique({
     where: { id: communityId },
     select: { visibility: true },
@@ -57,20 +63,17 @@ async function checkVisibility(
   if (!community) {
     return err({ type: 'CommunityNotFound' });
   }
-  if (community.visibility !== 'PRIVATE') {
-    return ok(undefined);
-  }
-  if (!requestingAccountId) {
+  const requestingMember = requestingAccountId
+    ? await prisma.communityMember.findUnique({
+        where: { communityId_accountId: { communityId, accountId: requestingAccountId } },
+        select: { status: true },
+      })
+    : null;
+  const isActiveMember = requestingMember?.status === 'ACTIVE';
+  if (community.visibility === 'PRIVATE' && !isActiveMember) {
     return err({ type: 'CommunityNotFound' });
   }
-  const requestingMember = await prisma.communityMember.findUnique({
-    where: { communityId_accountId: { communityId, accountId: requestingAccountId } },
-    select: { status: true },
-  });
-  if (!requestingMember || requestingMember.status !== 'ACTIVE') {
-    return err({ type: 'CommunityNotFound' });
-  }
-  return ok(undefined);
+  return ok({ isActiveMember });
 }
 
 /**
@@ -88,6 +91,7 @@ export function createListMembersReadQuery(prisma: PrismaClient): ListMembersRea
     if (!visibilityResult.ok) {
       return visibilityResult;
     }
+    const { isActiveMember } = visibilityResult.value;
 
     const memberWhere = { communityId: command.communityId, status: 'ACTIVE' as const };
     const [members, total] = await prisma.$transaction([
@@ -105,7 +109,7 @@ export function createListMembersReadQuery(prisma: PrismaClient): ListMembersRea
       members: members.map((r) => ({
         id: r.id as CommunityMemberId,
         communityId: r.communityId as CommunityId,
-        accountId: r.accountId as AccountId,
+        ...(isActiveMember ? { accountId: r.accountId as AccountId } : {}),
         accountName: r.account.name,
         role: r.role as CommunityMemberRole,
         status: r.status as CommunityMemberStatus,

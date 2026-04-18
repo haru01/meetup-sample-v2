@@ -23,7 +23,11 @@ export type Community = {
 export type CommunityMember = {
   readonly id: string;
   readonly communityId: string;
-  readonly accountId: string;
+  /**
+   * ACTIVE メンバー自身が閲覧している場合のみ返却される（列挙防止）。
+   * 未ログイン・非メンバーの requester には含まれない。
+   */
+  readonly accountId?: string;
   readonly accountName: string | null;
   readonly role: Role;
   readonly status: MemberStatus;
