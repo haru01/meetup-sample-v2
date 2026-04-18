@@ -23,6 +23,7 @@ export type RemainingCapacity = {
 
 export type ListEventsResponse = {
   events: PublishedEvent[];
+  total?: number;
 };
 
 export type EventDetailResponse = {

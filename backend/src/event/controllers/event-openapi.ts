@@ -50,6 +50,13 @@ const ListEventsResponseSchema = z
   })
   .openapi('ListEventsResponse');
 
+const ListCommunityEventsResponseSchema = z
+  .object({
+    events: z.array(EventDtoSchema),
+    total: z.number().int().openapi({ description: '総件数', example: 10 }),
+  })
+  .openapi('ListCommunityEventsResponse');
+
 const UpdateEventRequestSchema = z
   .object({
     title: EventTitleSchema.optional().openapi({ description: 'タイトル' }),
@@ -87,6 +94,7 @@ const CreateEventRequestSchema = z
 
 registry.register('EventPublicResponse', EventResponseSchema);
 registry.register('ListEventsResponse', ListEventsResponseSchema);
+registry.register('ListCommunityEventsResponse', ListCommunityEventsResponseSchema);
 registry.register('UpdateEventRequest', UpdateEventRequestSchema);
 registry.register('CreateEventRequest', CreateEventRequestSchema);
 
@@ -279,15 +287,36 @@ registry.registerPath({
   path: '/communities/{communityId}/events',
   tags: ['Events'],
   summary: 'コミュニティのイベント一覧を取得する',
+  description:
+    'コミュニティのイベントをページネーションで返します。DRAFT は作成者のみ参照可能です。',
   request: {
     params: z.object({
       communityId: UuidSchema.openapi({ description: 'コミュニティID' }),
+    }),
+    query: z.object({
+      limit: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .max(100)
+        .optional()
+        .openapi({ description: '取得件数（デフォルト: 20、上限: 100）', example: 20 }),
+      offset: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .openapi({ description: 'オフセット（デフォルト: 0）', example: 0 }),
     }),
   },
   responses: {
     200: {
       description: 'イベント一覧',
-      content: { 'application/json': { schema: ListEventsResponseSchema } },
+      content: { 'application/json': { schema: ListCommunityEventsResponseSchema } },
+    },
+    400: {
+      description: 'クエリバリデーションエラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
     },
   },
 });
