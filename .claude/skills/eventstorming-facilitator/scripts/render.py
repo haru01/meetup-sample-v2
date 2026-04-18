@@ -884,6 +884,14 @@ function groupsToItems(groups) {{
   return groups.flatMap(grp => grp.items.map(it => ({{...it, lane: grp.lane}})));
 }}
 
+// Render flow parts as indented multi-line text, breaking after each [event].
+// Example: `  @actor > !cmd > [event1]\n  > !cmd2 > [event2] >>`
+function formatFlowBody(parts, asyncSuffix) {{
+  const joined = parts.join(' > ');
+  const multiline = joined.replace(/\\] > /g, ']\\n  > ');
+  return `  ${{multiline}}${{asyncSuffix}}\\n`;
+}}
+
 function serializeToBlock(groups, title, segLabels) {{
   let block = `:::diagram-svg event_flow\ntitle: ${{title}}\nflow:\n`;
 
@@ -903,7 +911,7 @@ function serializeToBlock(groups, title, segLabels) {{
     // Trailing >> if next segment starts asynchronously
     const nextGrp = groups[gi + 1];
     const asyncSuffix = (nextGrp && nextGrp.items[0] && nextGrp.items[0].isAsync) ? ' >>' : '';
-    block += `  ${{parts.join(' > ')}}${{asyncSuffix}}\n`;
+    block += formatFlowBody(parts, asyncSuffix);
   }});
 
   block += ':::';
@@ -925,7 +933,7 @@ function serializeToRawText(groups, title, segLabels) {{
     }});
     const nextGrp = groups[gi + 1];
     const asyncSuffix = (nextGrp && nextGrp.items[0] && nextGrp.items[0].isAsync) ? ' >>' : '';
-    text += `  ${{parts.join(' > ')}}${{asyncSuffix}}\n`;
+    text += formatFlowBody(parts, asyncSuffix);
   }});
   return text;
 }}
