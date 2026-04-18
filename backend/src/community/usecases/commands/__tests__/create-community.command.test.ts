@@ -5,22 +5,20 @@ import type { CommunityRepository } from '../../../repositories/community.reposi
 import type { CommunityMemberRepository } from '../../../repositories/community-member.repository';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { CommunityCreatedEvent } from '../../../errors/community-errors';
-import { createCommunityId } from '@shared/schemas/id-factories';
-import { createCommunityMemberId } from '@shared/schemas/id-factories';
-import { createAccountId } from '@shared/schemas/id-factories';
+import { testCommunityId, testCommunityMemberId, testAccountId } from '@shared/testing/test-ids';
 
 // ============================================================
 // テスト用フィクスチャ
 // ============================================================
 
 const makeCommand = (): CreateCommunityInput => ({
-  accountId: createAccountId('account-1'),
+  accountId: testAccountId('account-1'),
   name: 'テストコミュニティ',
   description: 'テスト用コミュニティです',
   category: 'TECH' as const,
   visibility: 'PUBLIC' as const,
-  id: createCommunityId('community-1'),
-  ownerMemberId: createCommunityMemberId('member-1'),
+  id: testCommunityId('community-1'),
+  ownerMemberId: testCommunityMemberId('member-1'),
   createdAt: new Date('2026-01-01T00:00:00Z'),
   updatedAt: new Date('2026-01-01T00:00:00Z'),
 });
@@ -106,7 +104,7 @@ describe('CreateCommunityCommand', () => {
     it('同名のコミュニティが存在する場合はDuplicateCommunityNameエラーを返す', async () => {
       const cmd = makeCommand();
       const existing = {
-        id: createCommunityId('other-id'),
+        id: testCommunityId('other-id'),
         name: cmd.name,
         description: null,
         category: 'TECH' as const,

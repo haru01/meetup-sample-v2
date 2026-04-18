@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import type { AccountId, CommunityId, CommunityMemberId } from '@shared/schemas/common';
+import {
+  AccountIdSchema,
+  CommunityIdSchema,
+  CommunityMemberIdSchema,
+} from '@shared/schemas/common';
 
 // ============================================================
 // コミュニティメンバーロールスキーマ
@@ -26,9 +30,9 @@ export const CommunityMemberStatus = CommunityMemberStatusSchema.enum;
 // ============================================================
 
 export const CommunityMemberSchema = z.object({
-  id: z.custom<CommunityMemberId>((v) => typeof v === 'string'),
-  communityId: z.custom<CommunityId>((v) => typeof v === 'string'),
-  accountId: z.custom<AccountId>((v) => typeof v === 'string'),
+  id: CommunityMemberIdSchema,
+  communityId: CommunityIdSchema,
+  accountId: AccountIdSchema,
   role: CommunityMemberRoleSchema,
   status: CommunityMemberStatusSchema,
   createdAt: z.date(),

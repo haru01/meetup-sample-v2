@@ -4,16 +4,14 @@ import type { CommunityRepository } from '../../../repositories/community.reposi
 import type { CommunityMemberRepository } from '../../../repositories/community-member.repository';
 import type { Community } from '../../../models/community';
 import type { CommunityMember } from '../../../models/community-member';
-import { createCommunityId } from '@shared/schemas/id-factories';
-import { createCommunityMemberId } from '@shared/schemas/id-factories';
-import { createAccountId } from '@shared/schemas/id-factories';
+import { testCommunityId, testCommunityMemberId, testAccountId } from '@shared/testing/test-ids';
 
 // ============================================================
 // テスト用フィクスチャ
 // ============================================================
 
 const publicCommunity: Community = {
-  id: createCommunityId('community-1'),
+  id: testCommunityId('community-1'),
   name: 'パブリックコミュニティ',
   description: null,
   category: 'TECH',
@@ -23,7 +21,7 @@ const publicCommunity: Community = {
 };
 
 const privateCommunity: Community = {
-  id: createCommunityId('community-2'),
+  id: testCommunityId('community-2'),
   name: 'プライベートコミュニティ',
   description: null,
   category: 'BUSINESS',
@@ -32,9 +30,9 @@ const privateCommunity: Community = {
   updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
 
-const accountId = createAccountId('account-1');
+const accountId = testAccountId('account-1');
 const memberRecord: CommunityMember = {
-  id: createCommunityMemberId('member-1'),
+  id: testCommunityMemberId('member-1'),
   communityId: privateCommunity.id,
   accountId,
   role: 'MEMBER',
@@ -117,7 +115,7 @@ describe('GetCommunityQuery', () => {
       vi.mocked(communityRepo.findById).mockResolvedValue(null);
 
       const result = await useCase({
-        communityId: createCommunityId('non-existent'),
+        communityId: testCommunityId('non-existent'),
       });
 
       expect(result.ok).toBe(false);
@@ -143,7 +141,7 @@ describe('GetCommunityQuery', () => {
 
       const result = await useCase({
         communityId: privateCommunity.id,
-        requestingAccountId: createAccountId('other-account'),
+        requestingAccountId: testAccountId('other-account'),
       });
 
       expect(result.ok).toBe(false);

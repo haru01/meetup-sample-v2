@@ -1,5 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import type { AccountId, CommunityId, CommunityMemberId, EventId } from './common.js';
+import {
+  AccountIdSchema,
+  CommunityIdSchema,
+  CommunityMemberIdSchema,
+  EventIdSchema,
+  type AccountId,
+  type CommunityId,
+  type CommunityMemberId,
+  type EventId,
+} from './common.js';
 
 // ============================================================
 // AccountId Factories
@@ -12,7 +21,7 @@ import type { AccountId, CommunityId, CommunityMemberId, EventId } from './commo
  * @returns AccountId
  */
 export function createAccountId(id?: string): AccountId {
-  return (id ?? randomUUID()) as AccountId;
+  return AccountIdSchema.parse(id ?? randomUUID());
 }
 
 // ============================================================
@@ -26,7 +35,7 @@ export function createAccountId(id?: string): AccountId {
  * @returns CommunityId
  */
 export function createCommunityId(id?: string): CommunityId {
-  return (id ?? randomUUID()) as CommunityId;
+  return CommunityIdSchema.parse(id ?? randomUUID());
 }
 
 // ============================================================
@@ -40,7 +49,7 @@ export function createCommunityId(id?: string): CommunityId {
  * @returns CommunityMemberId
  */
 export function createCommunityMemberId(id?: string): CommunityMemberId {
-  return (id ?? randomUUID()) as CommunityMemberId;
+  return CommunityMemberIdSchema.parse(id ?? randomUUID());
 }
 
 // ============================================================
@@ -54,5 +63,5 @@ export function createCommunityMemberId(id?: string): CommunityMemberId {
  * @returns EventId
  */
 export function createEventId(id?: string): EventId {
-  return (id ?? randomUUID()) as EventId;
+  return EventIdSchema.parse(id ?? randomUUID());
 }

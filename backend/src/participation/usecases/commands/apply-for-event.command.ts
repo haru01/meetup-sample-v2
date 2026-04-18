@@ -1,7 +1,7 @@
 import { ok, err, type Result } from '@shared/result';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
-import type { EventId } from '@shared/schemas/common';
+import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
 import type { EventRepository } from '@event/repositories/event.repository';
 import { EventStatus } from '@event/models/schemas/event.schema';
 import { createParticipationId, type Participation } from '../../models/participation';
@@ -35,7 +35,10 @@ export function createApplyForEventCommand(
   eventBus: InMemoryEventBus<MeetupDomainEvent>
 ): ApplyForEventCommand {
   return async (command) => {
-    const event = await eventRepository.findById(command.eventId as EventId);
+    const eventId = EventIdSchema.parse(command.eventId);
+    const accountId = AccountIdSchema.parse(command.accountId);
+
+    const event = await eventRepository.findById(eventId);
     if (!event) {
       return err({ type: 'EventNotFound' });
     }
@@ -43,10 +46,7 @@ export function createApplyForEventCommand(
       return err({ type: 'EventNotPublished' });
     }
 
-    const existing = await participationRepository.findByEventAndAccount(
-      command.eventId,
-      command.accountId
-    );
+    const existing = await participationRepository.findByEventAndAccount(eventId, accountId);
     if (existing) {
       return err({ type: 'AlreadyApplied' });
     }
@@ -54,8 +54,8 @@ export function createApplyForEventCommand(
     const now = new Date();
     const initial: Participation = {
       id: createParticipationId(),
-      eventId: command.eventId,
-      accountId: command.accountId,
+      eventId,
+      accountId,
       status: ParticipationStatus.APPLIED,
       appliedAt: now,
       updatedAt: now,

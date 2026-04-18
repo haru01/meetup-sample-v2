@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { AccountId, CommunityId, EventId } from '@shared/schemas/common';
+import { AccountIdSchema, CommunityIdSchema, EventIdSchema } from '@shared/schemas/common';
 
 // ============================================================
 // イベントタイトルスキーマ
@@ -47,9 +47,9 @@ export type EventCapacity = z.infer<typeof EventCapacitySchema>;
 // ============================================================
 
 export const EventSchema = z.object({
-  id: z.custom<EventId>((v) => typeof v === 'string'),
-  communityId: z.custom<CommunityId>((v) => typeof v === 'string'),
-  createdBy: z.custom<AccountId>((v) => typeof v === 'string'),
+  id: EventIdSchema,
+  communityId: CommunityIdSchema,
+  createdBy: AccountIdSchema,
   title: EventTitleSchema,
   description: EventDescriptionSchema,
   startsAt: z.date(),

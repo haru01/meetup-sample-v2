@@ -1,5 +1,6 @@
 import type { PrismaClient, Prisma } from '@prisma/client';
 import { ParticipationStatus as PrismaParticipationStatus } from '@prisma/client';
+import type { AccountId, EventId } from '@shared/schemas/common';
 import {
   waitlistParticipation,
   type Participation,
@@ -29,14 +30,17 @@ export class PrismaParticipationRepository implements ParticipationRepository {
     return record ? this.toEntity(record) : null;
   }
 
-  async findByEventAndAccount(eventId: string, accountId: string): Promise<Participation | null> {
+  async findByEventAndAccount(
+    eventId: EventId,
+    accountId: AccountId
+  ): Promise<Participation | null> {
     const record = await this.prisma.participation.findUnique({
       where: { eventId_accountId: { eventId, accountId } },
     });
     return record ? this.toEntity(record) : null;
   }
 
-  async findAppliedByEvent(eventId: string): Promise<Participation[]> {
+  async findAppliedByEvent(eventId: EventId): Promise<Participation[]> {
     const records = await this.prisma.participation.findMany({
       where: { eventId, status: PrismaParticipationStatus.APPLIED },
       orderBy: { appliedAt: 'asc' },
@@ -44,7 +48,7 @@ export class PrismaParticipationRepository implements ParticipationRepository {
     return records.map((r) => this.toEntity(r));
   }
 
-  async findApprovedByEvent(eventId: string): Promise<Participation[]> {
+  async findApprovedByEvent(eventId: EventId): Promise<Participation[]> {
     const records = await this.prisma.participation.findMany({
       where: { eventId, status: PrismaParticipationStatus.APPROVED },
       orderBy: { appliedAt: 'asc' },
@@ -52,7 +56,7 @@ export class PrismaParticipationRepository implements ParticipationRepository {
     return records.map((r) => this.toEntity(r));
   }
 
-  async findActiveByEvent(eventId: string): Promise<Participation[]> {
+  async findActiveByEvent(eventId: EventId): Promise<Participation[]> {
     const records = await this.prisma.participation.findMany({
       where: {
         eventId,
@@ -65,13 +69,13 @@ export class PrismaParticipationRepository implements ParticipationRepository {
     return records.map((r) => this.toEntity(r));
   }
 
-  async countApproved(eventId: string): Promise<number> {
+  async countApproved(eventId: EventId): Promise<number> {
     return this.prisma.participation.count({
       where: { eventId, status: PrismaParticipationStatus.APPROVED },
     });
   }
 
-  async findFirstWaitlisted(eventId: string): Promise<Participation | null> {
+  async findFirstWaitlisted(eventId: EventId): Promise<Participation | null> {
     const record = await this.prisma.participation.findFirst({
       where: { eventId, status: PrismaParticipationStatus.WAITLISTED },
       orderBy: { appliedAt: 'asc' },
@@ -79,7 +83,7 @@ export class PrismaParticipationRepository implements ParticipationRepository {
     return record ? this.toEntity(record) : null;
   }
 
-  async findByAccount(accountId: string): Promise<Participation[]> {
+  async findByAccount(accountId: AccountId): Promise<Participation[]> {
     const records = await this.prisma.participation.findMany({
       where: { accountId },
       orderBy: { appliedAt: 'desc' },
@@ -173,8 +177,8 @@ export class PrismaParticipationRepository implements ParticipationRepository {
   private toEntity(record: ParticipationRecord): Participation {
     return {
       id: record.id as ParticipationId,
-      eventId: record.eventId,
-      accountId: record.accountId,
+      eventId: record.eventId as EventId,
+      accountId: record.accountId as AccountId,
       status: record.status as ParticipationStatus,
       appliedAt: record.appliedAt,
       updatedAt: record.updatedAt,

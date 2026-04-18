@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { ok, err, type Result } from '@shared/result';
+import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
 import type { CheckIn } from '../../models/checkin';
 import type { CheckInRepository } from '../../repositories/checkin.repository';
 import type { UnauthorizedError } from '../../errors/checkin-errors';
@@ -31,12 +32,15 @@ export function createListCheckInsQuery(
   checkInRepository: CheckInRepository
 ): ListCheckInsQuery {
   return async ({ eventId, requesterId }) => {
-    const event = await prisma.event.findUnique({ where: { id: eventId } });
-    if (!event || event.createdBy !== requesterId) {
+    const parsedEventId = EventIdSchema.parse(eventId);
+    const parsedRequesterId = AccountIdSchema.parse(requesterId);
+
+    const event = await prisma.event.findUnique({ where: { id: parsedEventId } });
+    if (!event || event.createdBy !== parsedRequesterId) {
       return err({ type: 'Unauthorized' });
     }
 
-    const checkins = await checkInRepository.findByEvent(eventId);
+    const checkins = await checkInRepository.findByEvent(parsedEventId);
     return ok({ checkins });
   };
 }

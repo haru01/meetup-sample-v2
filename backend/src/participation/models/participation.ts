@@ -1,17 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { ok, err, type Result } from '@shared/result';
-import { ParticipationStatus } from './schemas/participation.schema';
+import { ParticipationIdSchema, ParticipationStatus } from './schemas/participation.schema';
 import type { Participation, ParticipationId } from './schemas/participation.schema';
 import type { ParticipationInvalidStatusError } from '../errors/participation-errors';
 
 export type { Participation, ParticipationId } from './schemas/participation.schema';
-export { ParticipationSchema } from './schemas/participation.schema';
+export { ParticipationSchema, ParticipationIdSchema } from './schemas/participation.schema';
 
 /**
  * ParticipationIdを生成する
  */
 export function createParticipationId(id?: string): ParticipationId {
-  return (id ?? randomUUID()) as ParticipationId;
+  return ParticipationIdSchema.parse(id ?? randomUUID());
 }
 
 // ============================================================

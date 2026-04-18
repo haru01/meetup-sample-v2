@@ -1,7 +1,7 @@
 import { ok, err, type Result } from '@shared/result';
 import { InMemoryEventBus } from '@shared/event-bus';
 import type { MeetupDomainEvent } from '@shared/domain-events';
-import type { EventId } from '@shared/schemas/common';
+import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
 import type { EventRepository } from '@event/repositories/event.repository';
 import {
   approveParticipation,
@@ -37,11 +37,14 @@ export function createApproveParticipationsCommand(
   eventBus: InMemoryEventBus<MeetupDomainEvent>
 ): ApproveParticipationsCommand {
   return async (command) => {
-    const event = await eventRepository.findById(command.eventId as EventId);
+    const eventId = EventIdSchema.parse(command.eventId);
+    const requesterId = AccountIdSchema.parse(command.requesterId);
+
+    const event = await eventRepository.findById(eventId);
     if (!event) {
       return err({ type: 'EventNotFound' });
     }
-    if (event.createdBy !== command.requesterId) {
+    if (event.createdBy !== requesterId) {
       return err({ type: 'Unauthorized' });
     }
 
@@ -49,13 +52,13 @@ export function createApproveParticipationsCommand(
     if (command.participationIds && command.participationIds.length > 0) {
       for (const id of command.participationIds) {
         const p = await participationRepository.findById(id);
-        if (!p || p.eventId !== command.eventId) {
+        if (!p || p.eventId !== eventId) {
           return err({ type: 'ParticipationNotFound' });
         }
         targets.push(p);
       }
     } else {
-      const applied = await participationRepository.findAppliedByEvent(command.eventId);
+      const applied = await participationRepository.findAppliedByEvent(eventId);
       targets.push(...applied);
     }
 

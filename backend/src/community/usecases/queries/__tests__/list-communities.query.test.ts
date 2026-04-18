@@ -2,15 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createListCommunitiesQuery } from '../list-communities.query';
 import type { CommunityRepository } from '../../../repositories/community.repository';
 import type { Community } from '../../../models/community';
-import { createCommunityId } from '@shared/schemas/id-factories';
-import { createAccountId } from '@shared/schemas/id-factories';
+import { testCommunityId, testAccountId } from '@shared/testing/test-ids';
 
 // ============================================================
 // テスト用フィクスチャ
 // ============================================================
 
 const publicCommunity: Community = {
-  id: createCommunityId('community-1'),
+  id: testCommunityId('community-1'),
   name: 'パブリックコミュニティ',
   description: null,
   category: 'TECH',
@@ -60,7 +59,7 @@ describe('ListCommunitiesQuery', () => {
     });
 
     it('memberAccountIdが指定された場合にfindAllへ渡す', async () => {
-      const accountId = createAccountId('account-1');
+      const accountId = testAccountId('account-1');
 
       await useCase({ memberAccountId: accountId, limit: 10, offset: 0 });
 

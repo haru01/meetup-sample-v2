@@ -1,4 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
+import type { AccountId, EventId } from '@shared/schemas/common';
+import type { ParticipationId } from '@/participation/models/schemas/participation.schema';
 import type { CheckIn, CheckInId } from '../models/checkin';
 import type { CheckInRepository } from './checkin.repository';
 
@@ -17,12 +19,12 @@ type CheckInRecord = {
 export class PrismaCheckInRepository implements CheckInRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findByParticipationId(participationId: string): Promise<CheckIn | null> {
+  async findByParticipationId(participationId: ParticipationId): Promise<CheckIn | null> {
     const record = await this.prisma.checkIn.findUnique({ where: { participationId } });
     return record ? this.toCheckIn(record) : null;
   }
 
-  async findByEvent(eventId: string): Promise<CheckIn[]> {
+  async findByEvent(eventId: EventId): Promise<CheckIn[]> {
     const records = await this.prisma.checkIn.findMany({
       where: { eventId },
       orderBy: { checkedInAt: 'asc' },
@@ -49,9 +51,9 @@ export class PrismaCheckInRepository implements CheckInRepository {
   private toCheckIn(record: CheckInRecord): CheckIn {
     return {
       id: record.id as CheckInId,
-      participationId: record.participationId,
-      eventId: record.eventId,
-      accountId: record.accountId,
+      participationId: record.participationId as ParticipationId,
+      eventId: record.eventId as EventId,
+      accountId: record.accountId as AccountId,
       checkedInAt: record.checkedInAt,
     };
   }

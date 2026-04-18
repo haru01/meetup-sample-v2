@@ -4,16 +4,14 @@ import type { CommunityRepository } from '../../../repositories/community.reposi
 import type { CommunityMemberRepository } from '../../../repositories/community-member.repository';
 import type { Community } from '../../../models/community';
 import type { CommunityMember } from '../../../models/community-member';
-import { createCommunityId } from '@shared/schemas/id-factories';
-import { createCommunityMemberId } from '@shared/schemas/id-factories';
-import { createAccountId } from '@shared/schemas/id-factories';
+import { testCommunityId, testCommunityMemberId, testAccountId } from '@shared/testing/test-ids';
 
 // ============================================================
 // テスト用フィクスチャ
 // ============================================================
 
 const publicCommunity: Community = {
-  id: createCommunityId('community-1'),
+  id: testCommunityId('community-1'),
   name: 'パブリックコミュニティ',
   description: null,
   category: 'TECH',
@@ -23,7 +21,7 @@ const publicCommunity: Community = {
 };
 
 const privateCommunity: Community = {
-  id: createCommunityId('community-2'),
+  id: testCommunityId('community-2'),
   name: 'プライベートコミュニティ',
   description: null,
   category: 'TECH',
@@ -32,8 +30,8 @@ const privateCommunity: Community = {
   updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
 
-const accountId = createAccountId('account-1');
-const memberId = createCommunityMemberId('member-1');
+const accountId = testAccountId('account-1');
+const memberId = testCommunityMemberId('member-1');
 
 const existingMember: CommunityMember = {
   id: memberId,
@@ -122,7 +120,7 @@ describe('JoinCommunityCommand', () => {
       vi.mocked(communityRepo.findById).mockResolvedValue(null);
 
       const result = await useCase({
-        communityId: createCommunityId('non-existent'),
+        communityId: testCommunityId('non-existent'),
         accountId,
         memberId,
       });

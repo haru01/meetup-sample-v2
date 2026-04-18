@@ -1,3 +1,4 @@
+import type { AccountId, EventId } from '@shared/schemas/common';
 import type { Participation, ParticipationId } from '../models/participation';
 
 // ============================================================
@@ -6,13 +7,13 @@ import type { Participation, ParticipationId } from '../models/participation';
 
 export interface ParticipationRepository {
   findById(id: ParticipationId): Promise<Participation | null>;
-  findByEventAndAccount(eventId: string, accountId: string): Promise<Participation | null>;
-  findAppliedByEvent(eventId: string): Promise<Participation[]>;
-  findApprovedByEvent(eventId: string): Promise<Participation[]>;
-  findActiveByEvent(eventId: string): Promise<Participation[]>;
-  countApproved(eventId: string): Promise<number>;
-  findFirstWaitlisted(eventId: string): Promise<Participation | null>;
-  findByAccount(accountId: string): Promise<Participation[]>;
+  findByEventAndAccount(eventId: EventId, accountId: AccountId): Promise<Participation | null>;
+  findAppliedByEvent(eventId: EventId): Promise<Participation[]>;
+  findApprovedByEvent(eventId: EventId): Promise<Participation[]>;
+  findActiveByEvent(eventId: EventId): Promise<Participation[]>;
+  countApproved(eventId: EventId): Promise<number>;
+  findFirstWaitlisted(eventId: EventId): Promise<Participation | null>;
+  findByAccount(accountId: AccountId): Promise<Participation[]>;
   save(participation: Participation): Promise<void>;
   saveAll(participations: Participation[]): Promise<void>;
 

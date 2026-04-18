@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AccountIdSchema } from '@shared/schemas/common';
 
 // ============================================================
 // アカウント登録入力スキーマ
@@ -30,3 +31,16 @@ export const RegisterAccountInputSchema = z.object({
 
 /** アカウント登録入力型（スキーマから導出） */
 export type RegisterAccountInput = z.infer<typeof RegisterAccountInputSchema>;
+
+// ============================================================
+// アカウント集約スキーマ
+// ============================================================
+
+export const AccountSchema = z.object({
+  id: AccountIdSchema,
+  name: RegisterNameSchema,
+  email: RegisterEmailSchema,
+  passwordHash: z.string(),
+  createdAt: z.date(),
+});
+export type Account = z.infer<typeof AccountSchema>;

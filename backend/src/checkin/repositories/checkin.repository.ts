@@ -1,3 +1,5 @@
+import type { EventId } from '@shared/schemas/common';
+import type { ParticipationId } from '@/participation/models/schemas/participation.schema';
 import type { CheckIn } from '../models/checkin';
 
 // ============================================================
@@ -8,12 +10,12 @@ export interface CheckInRepository {
   /**
    * 参加申し込みIDからチェックインを取得
    */
-  findByParticipationId(participationId: string): Promise<CheckIn | null>;
+  findByParticipationId(participationId: ParticipationId): Promise<CheckIn | null>;
 
   /**
    * イベントIDに紐づくチェックイン一覧を取得
    */
-  findByEvent(eventId: string): Promise<CheckIn[]>;
+  findByEvent(eventId: EventId): Promise<CheckIn[]>;
 
   /**
    * チェックインを保存（insert）

@@ -1,3 +1,5 @@
+import type { AccountId, EventId } from '@shared/schemas/common';
+import type { ParticipationId } from '@/participation/models/schemas/participation.schema';
 import type { CheckIn, CheckInId } from './schemas/checkin.schema';
 
 // ============================================================
@@ -5,7 +7,7 @@ import type { CheckIn, CheckInId } from './schemas/checkin.schema';
 // ============================================================
 
 export type { CheckIn, CheckInId } from './schemas/checkin.schema';
-export { CheckInSchema } from './schemas/checkin.schema';
+export { CheckInSchema, CheckInIdSchema } from './schemas/checkin.schema';
 
 // ============================================================
 // CheckIn ファクトリ入力
@@ -13,9 +15,9 @@ export { CheckInSchema } from './schemas/checkin.schema';
 
 export interface CreateCheckInInput {
   readonly id: CheckInId;
-  readonly participationId: string;
-  readonly eventId: string;
-  readonly accountId: string;
+  readonly participationId: ParticipationId;
+  readonly eventId: EventId;
+  readonly accountId: AccountId;
   readonly checkedInAt: Date;
 }
 

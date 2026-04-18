@@ -4,16 +4,14 @@ import type { CommunityRepository } from '../../../repositories/community.reposi
 import type { CommunityMemberRepository } from '../../../repositories/community-member.repository';
 import type { Community } from '../../../models/community';
 import type { CommunityMember } from '../../../models/community-member';
-import { createCommunityId } from '@shared/schemas/id-factories';
-import { createCommunityMemberId } from '@shared/schemas/id-factories';
-import { createAccountId } from '@shared/schemas/id-factories';
+import { testCommunityId, testCommunityMemberId, testAccountId } from '@shared/testing/test-ids';
 
 // ============================================================
 // テスト用フィクスチャ
 // ============================================================
 
 const community: Community = {
-  id: createCommunityId('community-1'),
+  id: testCommunityId('community-1'),
   name: 'テストコミュニティ',
   description: null,
   category: 'TECH',
@@ -22,8 +20,8 @@ const community: Community = {
   updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
 
-const accountId = createAccountId('account-1');
-const memberId = createCommunityMemberId('member-1');
+const accountId = testAccountId('account-1');
+const memberId = testCommunityMemberId('member-1');
 
 const activeMember: CommunityMember = {
   id: memberId,
@@ -35,9 +33,9 @@ const activeMember: CommunityMember = {
 };
 
 const ownerMember: CommunityMember = {
-  id: createCommunityMemberId('owner-member-1'),
+  id: testCommunityMemberId('owner-member-1'),
   communityId: community.id,
-  accountId: createAccountId('owner-account-1'),
+  accountId: testAccountId('owner-account-1'),
   role: 'OWNER',
   status: 'ACTIVE',
   createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -104,7 +102,7 @@ describe('LeaveCommunityCommand', () => {
     it('memberId が他人のメンバーの場合は MemberNotFound を返す', async () => {
       vi.mocked(memberRepo.findById).mockResolvedValue({
         ...activeMember,
-        accountId: createAccountId('other-account'),
+        accountId: testAccountId('other-account'),
       });
 
       const result = await useCase({
@@ -125,7 +123,7 @@ describe('LeaveCommunityCommand', () => {
       const result = await useCase({
         communityId: community.id,
         accountId,
-        memberId: createCommunityMemberId('non-existent'),
+        memberId: testCommunityMemberId('non-existent'),
       });
 
       expect(result.ok).toBe(false);
@@ -140,7 +138,7 @@ describe('LeaveCommunityCommand', () => {
       vi.mocked(communityRepo.findById).mockResolvedValue(null);
 
       const result = await useCase({
-        communityId: createCommunityId('non-existent'),
+        communityId: testCommunityId('non-existent'),
         accountId,
       });
 

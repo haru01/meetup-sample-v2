@@ -4,14 +4,14 @@ import type { MeetupDomainEvent } from '@shared/domain-events';
 import { createCheckUpcomingEventsCommand } from '../check-upcoming-events.command';
 import type { EventRepository } from '../../../repositories/event.repository';
 import type { Event } from '../../../models/event';
-import { createEventId, createCommunityId, createAccountId } from '@shared/schemas/id-factories';
+import { testEventId, testCommunityId, testAccountId } from '@shared/testing/test-ids';
 
 const now = new Date('2026-06-01T10:00:00Z');
 
 const makeEvent = (overrides: Partial<Event> = {}): Event => ({
-  id: createEventId('event-1'),
-  communityId: createCommunityId('community-1'),
-  createdBy: createAccountId('account-1'),
+  id: testEventId('event-1'),
+  communityId: testCommunityId('community-1'),
+  createdBy: testAccountId('account-1'),
   title: 'サンプルイベント',
   description: null,
   startsAt: new Date('2026-06-02T10:00:00Z'),
@@ -43,7 +43,8 @@ describe('CheckUpcomingEventsCommand', () => {
 
   describe('正常系', () => {
     it('window 内のイベントを検知し EventDateApproached を発火する', async () => {
-      const events = [makeEvent({ id: createEventId('event-1') })];
+      const eventId = testEventId('event-1');
+      const events = [makeEvent({ id: eventId })];
       const repository = makeEventRepository(events);
       const command = createCheckUpcomingEventsCommand(repository, eventBus);
 
@@ -57,15 +58,15 @@ describe('CheckUpcomingEventsCommand', () => {
       expect(publishSpy).toHaveBeenCalledTimes(1);
       expect(publishSpy).toHaveBeenCalledWith({
         type: 'EventDateApproached',
-        eventId: 'event-1',
+        eventId,
       });
     });
 
     it('複数イベント分の EventDateApproached を発火する', async () => {
       const events = [
-        makeEvent({ id: createEventId('event-1') }),
-        makeEvent({ id: createEventId('event-2') }),
-        makeEvent({ id: createEventId('event-3') }),
+        makeEvent({ id: testEventId('event-1') }),
+        makeEvent({ id: testEventId('event-2') }),
+        makeEvent({ id: testEventId('event-3') }),
       ];
       const repository = makeEventRepository(events);
       const command = createCheckUpcomingEventsCommand(repository, eventBus);

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { describe, it, expect } from 'vitest';
 import type { AccountId, CommunityId, CommunityMemberId } from '../schemas/common';
 import {
@@ -6,7 +7,6 @@ import {
   createCommunityMemberId,
 } from '../schemas/id-factories';
 
-// UUID形式の検証用正規表現
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 describe('createAccountId', () => {
@@ -21,10 +21,14 @@ describe('createAccountId', () => {
     expect(id1).not.toBe(id2);
   });
 
-  it('カスタム文字列IDを受け付ける', () => {
-    const customId = 'custom-account-id-123';
-    const id = createAccountId(customId);
-    expect(id).toBe(customId);
+  it('UUID文字列を受け付ける', () => {
+    const uuid = randomUUID();
+    const id = createAccountId(uuid);
+    expect(id).toBe(uuid);
+  });
+
+  it('UUID形式でない文字列は拒否する', () => {
+    expect(() => createAccountId('not-a-uuid')).toThrow();
   });
 
   it('AccountId型として使用できる', () => {
@@ -45,10 +49,14 @@ describe('createCommunityId', () => {
     expect(id1).not.toBe(id2);
   });
 
-  it('カスタム文字列IDを受け付ける', () => {
-    const customId = 'custom-community-id-456';
-    const id = createCommunityId(customId);
-    expect(id).toBe(customId);
+  it('UUID文字列を受け付ける', () => {
+    const uuid = randomUUID();
+    const id = createCommunityId(uuid);
+    expect(id).toBe(uuid);
+  });
+
+  it('UUID形式でない文字列は拒否する', () => {
+    expect(() => createCommunityId('not-a-uuid')).toThrow();
   });
 
   it('CommunityId型として使用できる', () => {
@@ -69,10 +77,14 @@ describe('createCommunityMemberId', () => {
     expect(id1).not.toBe(id2);
   });
 
-  it('カスタム文字列IDを受け付ける', () => {
-    const customId = 'custom-member-id-789';
-    const id = createCommunityMemberId(customId);
-    expect(id).toBe(customId);
+  it('UUID文字列を受け付ける', () => {
+    const uuid = randomUUID();
+    const id = createCommunityMemberId(uuid);
+    expect(id).toBe(uuid);
+  });
+
+  it('UUID形式でない文字列は拒否する', () => {
+    expect(() => createCommunityMemberId('not-a-uuid')).toThrow();
   });
 
   it('CommunityMemberId型として使用できる', () => {

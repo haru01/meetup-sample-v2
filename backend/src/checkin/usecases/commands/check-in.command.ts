@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { ok, err, type Result } from '@shared/result';
+import { AccountIdSchema, EventIdSchema } from '@shared/schemas/common';
 import type { ParticipationRepository } from '@participation/repositories/participation.repository';
 import { ParticipationStatus } from '@participation/models/schemas/participation.schema';
-import type { CheckIn, CheckInId } from '../../models/checkin';
+import type { CheckIn } from '../../models/checkin';
+import { CheckInIdSchema } from '../../models/schemas/checkin.schema';
 import { createCheckIn } from '../../models/checkin';
 import type { CheckInRepository } from '../../repositories/checkin.repository';
 import type {
@@ -44,7 +46,13 @@ export function createCheckInCommand(
   checkInRepository: CheckInRepository
 ): CheckInCommand {
   return async ({ eventId, requesterId }) => {
-    const participation = await participationRepository.findByEventAndAccount(eventId, requesterId);
+    const parsedEventId = EventIdSchema.parse(eventId);
+    const parsedRequesterId = AccountIdSchema.parse(requesterId);
+
+    const participation = await participationRepository.findByEventAndAccount(
+      parsedEventId,
+      parsedRequesterId
+    );
 
     if (!participation) {
       return err({ type: 'ParticipationNotFound' });
@@ -60,7 +68,7 @@ export function createCheckInCommand(
     }
 
     const checkin = createCheckIn({
-      id: randomUUID() as CheckInId,
+      id: CheckInIdSchema.parse(randomUUID()),
       participationId: participation.id,
       eventId: participation.eventId,
       accountId: participation.accountId,

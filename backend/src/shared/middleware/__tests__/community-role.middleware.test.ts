@@ -3,11 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { createRequireCommunityRole } from '../community-role.middleware';
 import type { CommunityMemberRepository } from '@/community/repositories/community-member.repository';
 import { CommunityMemberRole } from '@/community/models/schemas/member.schema';
-import {
-  createCommunityId,
-  createCommunityMemberId,
-  createAccountId,
-} from '@shared/schemas/id-factories';
+import { testCommunityId, testCommunityMemberId, testAccountId } from '@shared/testing/test-ids';
 
 const makeMemberRepository = (): CommunityMemberRepository => ({
   findByIds: vi.fn().mockResolvedValue(null),
@@ -39,10 +35,10 @@ describe('createRequireCommunityRole', () => {
   });
 
   it('OWNER ロールのメンバーが OWNER/ADMIN 要求を通過する', async () => {
-    const communityId = createCommunityId('community-1');
-    const accountId = createAccountId('account-1');
+    const communityId = testCommunityId('community-1');
+    const accountId = testAccountId('account-1');
     vi.mocked(memberRepo.findByIds).mockResolvedValue({
-      id: createCommunityMemberId('member-1'),
+      id: testCommunityMemberId('member-1'),
       communityId,
       accountId,
       role: CommunityMemberRole.OWNER,
@@ -62,10 +58,10 @@ describe('createRequireCommunityRole', () => {
   });
 
   it('ADMIN ロールのメンバーが OWNER/ADMIN 要求を通過する', async () => {
-    const communityId = createCommunityId('community-1');
-    const accountId = createAccountId('account-1');
+    const communityId = testCommunityId('community-1');
+    const accountId = testAccountId('account-1');
     vi.mocked(memberRepo.findByIds).mockResolvedValue({
-      id: createCommunityMemberId('member-1'),
+      id: testCommunityMemberId('member-1'),
       communityId,
       accountId,
       role: CommunityMemberRole.ADMIN,
@@ -85,10 +81,10 @@ describe('createRequireCommunityRole', () => {
   });
 
   it('MEMBER ロールのメンバーが OWNER/ADMIN 要求で 403 を返す', async () => {
-    const communityId = createCommunityId('community-1');
-    const accountId = createAccountId('account-1');
+    const communityId = testCommunityId('community-1');
+    const accountId = testAccountId('account-1');
     vi.mocked(memberRepo.findByIds).mockResolvedValue({
-      id: createCommunityMemberId('member-1'),
+      id: testCommunityMemberId('member-1'),
       communityId,
       accountId,
       role: CommunityMemberRole.MEMBER,
@@ -113,8 +109,8 @@ describe('createRequireCommunityRole', () => {
   });
 
   it('メンバーが見つからない場合は 403 を返す', async () => {
-    const communityId = createCommunityId('community-1');
-    const accountId = createAccountId('account-1');
+    const communityId = testCommunityId('community-1');
+    const accountId = testAccountId('account-1');
     vi.mocked(memberRepo.findByIds).mockResolvedValue(null);
 
     const middleware = createRequireCommunityRole(

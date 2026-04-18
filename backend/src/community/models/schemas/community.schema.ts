@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { CommunityId } from '@shared/schemas/common';
+import { CommunityIdSchema } from '@shared/schemas/common';
 
 // ============================================================
 // コミュニティカテゴリスキーマ
@@ -40,7 +40,7 @@ export type CommunityDescription = z.infer<typeof CommunityDescriptionSchema>;
 // ============================================================
 
 export const CommunitySchema = z.object({
-  id: z.custom<CommunityId>((v) => typeof v === 'string'),
+  id: CommunityIdSchema,
   name: CommunityNameSchema,
   description: CommunityDescriptionSchema,
   category: CommunityCategorySchema,

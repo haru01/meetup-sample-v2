@@ -1,10 +1,17 @@
 import { z } from 'zod';
+import {
+  AccountIdSchema,
+  EventIdSchema,
+  type AccountId,
+  type EventId,
+} from '@shared/schemas/common';
 
 // ============================================================
-// ブランド型
+// ParticipationId スキーマ（Zod Branded Type）
 // ============================================================
 
-export type ParticipationId = string & { readonly __brand: 'ParticipationId' };
+export const ParticipationIdSchema = z.string().uuid().brand<'ParticipationId'>();
+export type ParticipationId = z.infer<typeof ParticipationIdSchema>;
 
 // ============================================================
 // 参加ステータススキーマ
@@ -21,11 +28,13 @@ export const ParticipationStatus = ParticipationStatusSchema.enum;
 // ============================================================
 
 export const ParticipationSchema = z.object({
-  id: z.custom<ParticipationId>((v) => typeof v === 'string'),
-  eventId: z.string(),
-  accountId: z.string(),
+  id: ParticipationIdSchema,
+  eventId: EventIdSchema,
+  accountId: AccountIdSchema,
   status: ParticipationStatusSchema,
   appliedAt: z.date(),
   updatedAt: z.date(),
 });
 export type Participation = z.infer<typeof ParticipationSchema>;
+
+export type { AccountId, EventId };

@@ -3,14 +3,14 @@ import { createCreateEventCommand } from '../create-event.command';
 import type { CreateEventInput } from '../create-event.command';
 import type { CommunityRepository } from '@community/repositories/community.repository';
 import type { EventRepository } from '../../../repositories/event.repository';
-import { createEventId, createCommunityId, createAccountId } from '@shared/schemas/id-factories';
+import { testEventId, testCommunityId, testAccountId } from '@shared/testing/test-ids';
 
 const now = new Date('2026-01-01T00:00:00Z');
 
 const makeCommand = (): CreateEventInput => ({
-  id: createEventId('event-1'),
-  communityId: createCommunityId('community-1'),
-  createdBy: createAccountId('account-1'),
+  id: testEventId('event-1'),
+  communityId: testCommunityId('community-1'),
+  createdBy: testAccountId('account-1'),
   title: 'テストイベント',
   description: 'テスト用の説明',
   startsAt: new Date('2026-06-01T10:00:00Z'),
@@ -24,7 +24,7 @@ const makeCommand = (): CreateEventInput => ({
 
 const makeCommunityRepository = (): CommunityRepository => ({
   findById: vi.fn().mockResolvedValue({
-    id: createCommunityId('community-1'),
+    id: testCommunityId('community-1'),
     name: 'テストコミュニティ',
     description: null,
     category: 'TECH' as const,

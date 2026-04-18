@@ -18,18 +18,18 @@ export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 export const NotificationType = NotificationTypeSchema.enum;
 
 // ============================================================
-// NotificationId スキーマ（Branded Type）
+// NotificationId スキーマ（Zod Branded Type）
 // ============================================================
 
-export const NotificationIdSchema = z.string().uuid();
-export type NotificationId = string & { readonly __brand: 'NotificationId' };
+export const NotificationIdSchema = z.string().uuid().brand<'NotificationId'>();
+export type NotificationId = z.infer<typeof NotificationIdSchema>;
 
 // ============================================================
 // Notification 集約スキーマ
 // ============================================================
 
 export const NotificationSchema = z.object({
-  id: z.custom<NotificationId>((v) => typeof v === 'string'),
+  id: NotificationIdSchema,
   type: NotificationTypeSchema,
   recipientId: z.string(),
   payload: z.string(),

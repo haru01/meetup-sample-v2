@@ -1,18 +1,13 @@
 import { ok, type Result } from '@shared/result';
 import type { AccountId } from '@shared/schemas/common';
+import type { Account } from './schemas/account.schema';
+
+export type { Account } from './schemas/account.schema';
+export { AccountSchema } from './schemas/account.schema';
 
 // ============================================================
 // アカウントエンティティ
 // ============================================================
-
-/** アカウントエンティティ（読み取り専用インターフェース） */
-export interface Account {
-  readonly id: AccountId;
-  readonly name: string;
-  readonly email: string;
-  readonly passwordHash: string;
-  readonly createdAt: Date;
-}
 
 /** アカウント作成の入力 */
 export interface CreateAccountInput {
