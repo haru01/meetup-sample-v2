@@ -5,23 +5,13 @@ import type {
   CommunityVisibility,
   CommunityName,
   CommunityDescription,
+  Community,
 } from './schemas/community.schema';
 import type { CommunityMember } from './community-member';
 import { CommunityMemberRole, CommunityMemberStatus } from './schemas/member.schema';
 
-// ============================================================
-// コミュニティエンティティ
-// ============================================================
-
-export interface Community {
-  readonly id: CommunityId;
-  readonly name: CommunityName;
-  readonly description: CommunityDescription;
-  readonly category: CommunityCategory;
-  readonly visibility: CommunityVisibility;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-}
+export type { Community } from './schemas/community.schema';
+export { CommunitySchema } from './schemas/community.schema';
 
 // ============================================================
 // コミュニティ作成

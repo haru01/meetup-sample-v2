@@ -23,3 +23,16 @@ export const NotificationType = NotificationTypeSchema.enum;
 
 export const NotificationIdSchema = z.string().uuid();
 export type NotificationId = string & { readonly __brand: 'NotificationId' };
+
+// ============================================================
+// Notification 集約スキーマ
+// ============================================================
+
+export const NotificationSchema = z.object({
+  id: z.custom<NotificationId>((v) => typeof v === 'string'),
+  type: NotificationTypeSchema,
+  recipientId: z.string(),
+  payload: z.string(),
+  sentAt: z.date(),
+});
+export type Notification = z.infer<typeof NotificationSchema>;

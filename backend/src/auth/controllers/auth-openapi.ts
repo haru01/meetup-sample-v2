@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { registry, UuidSchema, ErrorResponseSchema } from '@shared/openapi/registry';
-import { RegisterEmailSchema } from '../models/schemas/account.schema';
+import {
+  RegisterEmailSchema,
+  RegisterNameSchema,
+  RegisterPasswordSchema,
+} from '../models/schemas/account.schema';
 
 // ============================================================
 // Auth OpenAPI スキーマ定義
@@ -8,12 +12,15 @@ import { RegisterEmailSchema } from '../models/schemas/account.schema';
 
 const RegisterRequestSchema = z
   .object({
-    name: z.string().min(1).max(100).openapi({ description: '表示名', example: '山田太郎' }),
+    name: RegisterNameSchema.openapi({ description: '表示名', example: '山田太郎' }),
     email: RegisterEmailSchema.openapi({
       description: 'メールアドレス',
       example: 'user@example.com',
     }),
-    password: z.string().min(1).openapi({ description: 'パスワード', example: 'password123' }),
+    password: RegisterPasswordSchema.openapi({
+      description: 'パスワード',
+      example: 'password123',
+    }),
   })
   .openapi('RegisterRequest');
 
@@ -32,7 +39,10 @@ const LoginRequestSchema = z
       description: 'メールアドレス',
       example: 'user@example.com',
     }),
-    password: z.string().min(1).openapi({ description: 'パスワード', example: 'password123' }),
+    password: RegisterPasswordSchema.openapi({
+      description: 'パスワード',
+      example: 'password123',
+    }),
   })
   .openapi('LoginRequest');
 

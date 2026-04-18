@@ -287,24 +287,7 @@ registry.registerPath({
   responses: {
     200: {
       description: 'イベント一覧',
-      content: {
-        'application/json': {
-          schema: z.object({
-            events: z.array(
-              z.object({
-                id: UuidSchema,
-                communityId: UuidSchema,
-                title: EventTitleSchema,
-                status: EventStatusSchema,
-                startsAt: z.string().datetime(),
-                endsAt: z.string().datetime(),
-                format: EventFormatSchema,
-                capacity: EventCapacitySchema,
-              })
-            ),
-          }),
-        },
-      },
+      content: { 'application/json': { schema: ListEventsResponseSchema } },
     },
   },
 });

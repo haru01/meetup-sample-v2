@@ -15,12 +15,17 @@ export const RegisterNameSchema = z.string().min(1).max(100);
 export const RegisterEmailSchema = z.string().email();
 
 /**
+ * 登録パスワードスキーマ（1文字以上）
+ */
+export const RegisterPasswordSchema = z.string().min(1);
+
+/**
  * アカウント登録入力スキーマ
  */
 export const RegisterAccountInputSchema = z.object({
   name: RegisterNameSchema,
   email: RegisterEmailSchema,
-  password: z.string().min(1),
+  password: RegisterPasswordSchema,
 });
 
 /** アカウント登録入力型（スキーマから導出） */

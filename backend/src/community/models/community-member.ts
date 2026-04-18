@@ -1,21 +1,12 @@
 import { ok, err, type Result } from '@shared/result';
-import type { AccountId, CommunityId, CommunityMemberId } from '@shared/schemas/common';
+import type { AccountId, CommunityMemberId } from '@shared/schemas/common';
 import type { Community } from './community';
 import { CommunityMemberRole, CommunityMemberStatus } from './schemas/member.schema';
+import type { CommunityMember } from './schemas/member.schema';
 import type { LeaveCommunityError, ApproveMemberError } from '../errors/community-errors';
 
-// ============================================================
-// コミュニティメンバーエンティティ
-// ============================================================
-
-export interface CommunityMember {
-  readonly id: CommunityMemberId;
-  readonly communityId: CommunityId;
-  readonly accountId: AccountId;
-  readonly role: CommunityMemberRole;
-  readonly status: CommunityMemberStatus;
-  readonly createdAt: Date;
-}
+export type { CommunityMember } from './schemas/member.schema';
+export { CommunityMemberSchema } from './schemas/member.schema';
 
 // ============================================================
 // コミュニティ参加

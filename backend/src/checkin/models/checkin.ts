@@ -1,18 +1,11 @@
-import type { CheckInId } from './schemas/checkin.schema';
+import type { CheckIn, CheckInId } from './schemas/checkin.schema';
 
 // ============================================================
-// CheckIn エンティティ
+// CheckIn エンティティ（schemas から再エクスポート）
 // ============================================================
 
-export type { CheckInId };
-
-export interface CheckIn {
-  readonly id: CheckInId;
-  readonly participationId: string;
-  readonly eventId: string;
-  readonly accountId: string;
-  readonly checkedInAt: Date;
-}
+export type { CheckIn, CheckInId } from './schemas/checkin.schema';
+export { CheckInSchema } from './schemas/checkin.schema';
 
 // ============================================================
 // CheckIn ファクトリ入力

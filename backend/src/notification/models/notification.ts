@@ -1,15 +1,6 @@
-import type { NotificationId, NotificationType } from './schemas/notification.schema';
-
 // ============================================================
-// Notification エンティティ
+// Notification エンティティ（schemas から再エクスポート）
 // ============================================================
 
-export type { NotificationId, NotificationType };
-
-export interface Notification {
-  readonly id: NotificationId;
-  readonly type: NotificationType;
-  readonly recipientId: string;
-  readonly payload: string;
-  readonly sentAt: Date;
-}
+export type { Notification, NotificationId, NotificationType } from './schemas/notification.schema';
+export { NotificationSchema } from './schemas/notification.schema';

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { CommunityId } from '@shared/schemas/common';
 
 // ============================================================
 // コミュニティカテゴリスキーマ
@@ -33,3 +34,18 @@ export type CommunityName = z.infer<typeof CommunityNameSchema>;
 
 export const CommunityDescriptionSchema = z.string().max(1000).nullable();
 export type CommunityDescription = z.infer<typeof CommunityDescriptionSchema>;
+
+// ============================================================
+// コミュニティ集約スキーマ
+// ============================================================
+
+export const CommunitySchema = z.object({
+  id: z.custom<CommunityId>((v) => typeof v === 'string'),
+  name: CommunityNameSchema,
+  description: CommunityDescriptionSchema,
+  category: CommunityCategorySchema,
+  visibility: CommunityVisibilitySchema,
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type Community = z.infer<typeof CommunitySchema>;

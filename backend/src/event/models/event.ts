@@ -5,6 +5,7 @@ import type {
   EventDescription,
   EventFormat,
   EventCapacity,
+  Event,
 } from './schemas/event.schema';
 import { EventStatus } from './schemas/event.schema';
 import type {
@@ -15,24 +16,8 @@ import type {
   CreateEventValidationError,
 } from '../errors/event-errors';
 
-// ============================================================
-// イベントエンティティ
-// ============================================================
-
-export interface Event {
-  readonly id: EventId;
-  readonly communityId: CommunityId;
-  readonly createdBy: AccountId;
-  readonly title: EventTitle;
-  readonly description: EventDescription;
-  readonly startsAt: Date;
-  readonly endsAt: Date;
-  readonly format: EventFormat;
-  readonly capacity: EventCapacity;
-  readonly status: EventStatus;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-}
+export type { Event } from './schemas/event.schema';
+export { EventSchema } from './schemas/event.schema';
 
 // ============================================================
 // イベント作成（ファクトリ）
