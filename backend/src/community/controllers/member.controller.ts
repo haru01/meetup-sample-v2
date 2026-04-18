@@ -122,8 +122,8 @@ export function createMemberRouter(deps: MemberDependencies): Router {
    */
   router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
     const communityId = req.params['id'] as CommunityId;
-    const limit = parseInt((req.query['limit'] as string | undefined) ?? '20', 10);
-    const offset = parseInt((req.query['offset'] as string | undefined) ?? '0', 10);
+    const limit = typeof req.query['limit'] === 'number' ? req.query['limit'] : 20;
+    const offset = typeof req.query['offset'] === 'number' ? req.query['offset'] : 0;
     const requestingAccountId = req.accountId as AccountId | undefined;
 
     const result = await listMembersReadQuery({

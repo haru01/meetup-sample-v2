@@ -382,6 +382,58 @@ describe('GET /communities/:id/members — メンバー一覧取得', () => {
       expect(res.body.members[0].accountName).toBe('オーナー private active');
     });
   });
+
+  describe('limit/offset の検証', () => {
+    it('limit=999999 など上限 100 を超える場合は 400 を返すこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-limit-over@example.com',
+        'オーナー limit over'
+      );
+      const communityId = await コミュニティを作成する(owner.token, 'limit 超過テスト', 'PUBLIC');
+
+      await request(app).get(`/communities/${communityId}/members?limit=999999`).expect(400);
+    });
+
+    it('limit=-1 など負値の場合は 400 を返すこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-limit-neg@example.com',
+        'オーナー limit neg'
+      );
+      const communityId = await コミュニティを作成する(owner.token, 'limit 負値テスト', 'PUBLIC');
+
+      await request(app).get(`/communities/${communityId}/members?limit=-1`).expect(400);
+    });
+
+    it('limit=abc など数値でない場合は 400 を返すこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-limit-nan@example.com',
+        'オーナー limit NaN'
+      );
+      const communityId = await コミュニティを作成する(owner.token, 'limit 非数値テスト', 'PUBLIC');
+
+      await request(app).get(`/communities/${communityId}/members?limit=abc`).expect(400);
+    });
+
+    it('offset=-1 など負値の場合は 400 を返すこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-offset-neg@example.com',
+        'オーナー offset neg'
+      );
+      const communityId = await コミュニティを作成する(owner.token, 'offset 負値テスト', 'PUBLIC');
+
+      await request(app).get(`/communities/${communityId}/members?offset=-1`).expect(400);
+    });
+
+    it('limit=100（上限ぴったり）は 200 を返すこと', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-limit-ok@example.com',
+        'オーナー limit OK'
+      );
+      const communityId = await コミュニティを作成する(owner.token, 'limit OK テスト', 'PUBLIC');
+
+      await request(app).get(`/communities/${communityId}/members?limit=100`).expect(200);
+    });
+  });
 });
 
 // ============================================================

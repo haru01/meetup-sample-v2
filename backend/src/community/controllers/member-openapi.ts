@@ -154,14 +154,19 @@ registry.registerPath({
       id: UuidSchema.openapi({ description: 'コミュニティID' }),
     }),
     query: z.object({
-      limit: z
-        .string()
+      limit: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .max(100)
         .optional()
-        .openapi({ description: '取得件数（デフォルト: 20）', example: '20' }),
-      offset: z
-        .string()
+        .openapi({ description: '取得件数（デフォルト: 20、上限: 100）', example: 20 }),
+      offset: z.coerce
+        .number()
+        .int()
+        .min(0)
         .optional()
-        .openapi({ description: 'オフセット（デフォルト: 0）', example: '0' }),
+        .openapi({ description: 'オフセット（デフォルト: 0）', example: 0 }),
     }),
   },
   responses: {

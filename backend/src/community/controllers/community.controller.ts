@@ -77,8 +77,8 @@ export function createCommunityRouter(deps: CommunityDependencies): Router {
   router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
     const memberFilter = req.query['member'];
     const category = req.query['category'] as string | undefined;
-    const limit = Math.min(parseInt(req.query['limit'] as string, 10) || 20, 100);
-    const offset = parseInt(req.query['offset'] as string, 10) || 0;
+    const limit = typeof req.query['limit'] === 'number' ? req.query['limit'] : 20;
+    const offset = typeof req.query['offset'] === 'number' ? req.query['offset'] : 0;
 
     // ?member=me は認証が必要
     if (memberFilter === 'me' && !req.accountId) {
