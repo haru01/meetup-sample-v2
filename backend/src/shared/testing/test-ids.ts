@@ -6,10 +6,6 @@ import {
   createEventId,
 } from '@shared/schemas/id-factories';
 import type { AccountId, CommunityId, CommunityMemberId, EventId } from '@shared/schemas/common';
-import { ParticipationIdSchema } from '@/participation/models/schemas/participation.schema';
-import type { ParticipationId } from '@/participation/models/schemas/participation.schema';
-import { CheckInIdSchema } from '@/checkin/models/schemas/checkin.schema';
-import type { CheckInId } from '@/checkin/models/schemas/checkin.schema';
 
 /**
  * 任意の文字列から決定的な UUID v4 形式文字列を生成する（テスト専用）。
@@ -42,12 +38,4 @@ export function testCommunityMemberId(seed: string): CommunityMemberId {
 
 export function testEventId(seed: string): EventId {
   return createEventId(deterministicUuid(`event:${seed}`));
-}
-
-export function testParticipationId(seed: string): ParticipationId {
-  return ParticipationIdSchema.parse(deterministicUuid(`participation:${seed}`));
-}
-
-export function testCheckInId(seed: string): CheckInId {
-  return CheckInIdSchema.parse(deterministicUuid(`checkin:${seed}`));
 }

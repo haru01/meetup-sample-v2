@@ -21,9 +21,6 @@ export const Layout = ({ children }: LayoutProps) => {
               <Link to="/" className="text-gray-600 hover:text-gray-900">
                 コミュニティ一覧
               </Link>
-              <Link to="/events" className="text-gray-600 hover:text-gray-900">
-                イベント
-              </Link>
               {isAuthenticated && (
                 <>
                   <Link
@@ -31,12 +28,6 @@ export const Layout = ({ children }: LayoutProps) => {
                     className="text-gray-600 hover:text-gray-900"
                   >
                     マイコミュニティ
-                  </Link>
-                  <Link
-                    to="/my/participations"
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    参加履歴
                   </Link>
                   <Link
                     to="/communities/new"

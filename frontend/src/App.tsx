@@ -8,11 +8,6 @@ import { CommunityDetailPage } from "./community/pages/CommunityDetailPage";
 import { CommunityCreatePage } from "./community/pages/CommunityCreatePage";
 import { MyCommunitiesPage } from "./community/pages/MyCommunitiesPage";
 import { EventCreatePage } from "./community/pages/EventCreatePage";
-import { EventListPage } from "./event/pages/EventListPage";
-import { EventDetailPage } from "./event/pages/EventDetailPage";
-import { MyParticipationsPage } from "./participation/pages/MyParticipationsPage";
-import { OrganizerApprovalPage } from "./participation/pages/OrganizerApprovalPage";
-import { CheckInPage } from "./participation/pages/CheckInPage";
 
 export function App() {
   return (
@@ -30,14 +25,6 @@ export function App() {
             />
             <Route path="/communities/:id" element={<CommunityDetailPage />} />
             <Route path="/my-communities" element={<MyCommunitiesPage />} />
-            <Route path="/events" element={<EventListPage />} />
-            <Route path="/events/:id" element={<EventDetailPage />} />
-            <Route
-              path="/events/:id/applications"
-              element={<OrganizerApprovalPage />}
-            />
-            <Route path="/events/:id/checkin" element={<CheckInPage />} />
-            <Route path="/my/participations" element={<MyParticipationsPage />} />
           </Routes>
         </Layout>
       </BrowserRouter>

@@ -50,7 +50,7 @@ describe('Cache-Control ヘッダ', () => {
     const token = loginRes.body.token as string;
 
     const res = await request(app)
-      .get('/participations/my')
+      .get('/auth/me')
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 

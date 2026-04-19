@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useCommunities } from "../hooks/useCommunities";
 import { useMembers } from "../hooks/useMembers";
 import { useEvents } from "../hooks/useEvents";
@@ -107,12 +107,12 @@ export const CommunityDetailPage = () => {
 
       <h2 className="mb-4 text-xl font-semibold">イベント一覧</h2>
       <div className="mb-6 space-y-2">
-        {communityEvents.length === 0 && <p className="text-gray-500">イベントはありません</p>}
+        {communityEvents.length === 0 && (
+          <p className="text-gray-500">イベントはありません</p>
+        )}
         {communityEvents.map((ev) => (
           <Card key={ev.id} className="flex items-center justify-between">
-            <Link to={`/events/${ev.id}`} className="font-medium text-blue-600 hover:underline">
-              {ev.title}
-            </Link>
+            <span className="font-medium text-gray-900">{ev.title}</span>
             <span className="text-sm text-gray-500">{ev.status}</span>
           </Card>
         ))}
