@@ -1,4 +1,4 @@
-import type { AccountId, CommunityId } from '@shared/schemas/common';
+import type { AccountId, CommunityId, CommunityMemberId } from '@shared/schemas/common';
 
 // ============================================================
 // Meetupコンテキスト - エラー型定義
@@ -62,3 +62,70 @@ export type CommunityCreatedEvent = {
   name: string;
   occurredAt: Date;
 };
+
+/**
+ * メンバー参加ドメインイベント（PUBLIC コミュニティで ACTIVE 登録された場合）
+ */
+export type MemberJoinedEvent = {
+  type: 'MemberJoined';
+  communityId: CommunityId;
+  accountId: AccountId;
+  memberId: CommunityMemberId;
+  occurredAt: Date;
+};
+
+/**
+ * メンバー申請ドメインイベント（PRIVATE コミュニティで PENDING 登録された場合）
+ */
+export type MemberApplicationSubmittedEvent = {
+  type: 'MemberApplicationSubmitted';
+  communityId: CommunityId;
+  accountId: AccountId;
+  memberId: CommunityMemberId;
+  occurredAt: Date;
+};
+
+/**
+ * メンバー承認ドメインイベント
+ */
+export type MemberApprovedEvent = {
+  type: 'MemberApproved';
+  communityId: CommunityId;
+  memberId: CommunityMemberId;
+  accountId: AccountId;
+  occurredAt: Date;
+};
+
+/**
+ * メンバー拒否ドメインイベント
+ */
+export type MemberRejectedEvent = {
+  type: 'MemberRejected';
+  communityId: CommunityId;
+  memberId: CommunityMemberId;
+  accountId: AccountId;
+  occurredAt: Date;
+};
+
+/**
+ * メンバー脱退ドメインイベント
+ */
+export type MemberLeftEvent = {
+  type: 'MemberLeft';
+  communityId: CommunityId;
+  memberId: CommunityMemberId;
+  accountId: AccountId;
+  occurredAt: Date;
+};
+
+/**
+ * community BC のドメインイベント union
+ * InMemoryEventBus<CommunityDomainEvent> の型引数として使用する
+ */
+export type CommunityDomainEvent =
+  | CommunityCreatedEvent
+  | MemberJoinedEvent
+  | MemberApplicationSubmittedEvent
+  | MemberApprovedEvent
+  | MemberRejectedEvent
+  | MemberLeftEvent;

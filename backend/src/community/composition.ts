@@ -41,7 +41,7 @@ import {
 } from './usecases/queries/list-members-read.query';
 import { CommunityMemberRole } from './models/schemas/member.schema';
 import { createRequireCommunityRole } from '@shared/middleware/community-role.middleware';
-import type { CommunityCreatedEvent } from './errors/community-errors';
+import type { CommunityDomainEvent } from './errors/community-errors';
 
 // ============================================================
 // Community コンテキスト 依存性構成
@@ -72,7 +72,7 @@ export function createCommunityDependencies(prisma: PrismaClient): {
 } {
   const communityRepository = new PrismaCommunityRepository(prisma);
   const communityMemberRepository = new PrismaCommunityMemberRepository(prisma);
-  const eventBus = new InMemoryEventBus<CommunityCreatedEvent>();
+  const eventBus = new InMemoryEventBus<CommunityDomainEvent>();
 
   return {
     community: {
@@ -87,20 +87,24 @@ export function createCommunityDependencies(prisma: PrismaClient): {
     member: {
       joinCommunityCommand: createJoinCommunityCommand(
         communityRepository,
-        communityMemberRepository
+        communityMemberRepository,
+        eventBus
       ),
       leaveCommunityCommand: createLeaveCommunityCommand(
         communityRepository,
-        communityMemberRepository
+        communityMemberRepository,
+        eventBus
       ),
       listMembersQuery: createListMembersQuery(communityRepository, communityMemberRepository),
       approveMemberCommand: createApproveMemberCommand(
         communityRepository,
-        communityMemberRepository
+        communityMemberRepository,
+        eventBus
       ),
       rejectMemberCommand: createRejectMemberCommand(
         communityRepository,
-        communityMemberRepository
+        communityMemberRepository,
+        eventBus
       ),
       listMembersReadQuery: createListMembersReadQuery(prisma),
       requireCommunityRole: createRequireCommunityRole(

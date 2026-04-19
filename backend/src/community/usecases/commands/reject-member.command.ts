@@ -1,8 +1,13 @@
 import { ok, err, type Result } from '@shared/result';
 import type { CommunityId, CommunityMemberId } from '@shared/schemas/common';
+import type { InMemoryEventBus } from '@shared/event-bus';
 import type { CommunityRepository } from '../../repositories/community.repository';
 import type { CommunityMemberRepository } from '../../repositories/community-member.repository';
-import type { RejectMemberError } from '../../errors/community-errors';
+import type {
+  CommunityDomainEvent,
+  MemberRejectedEvent,
+  RejectMemberError,
+} from '../../errors/community-errors';
 
 // ============================================================
 // メンバー拒否コマンド
@@ -11,6 +16,7 @@ import type { RejectMemberError } from '../../errors/community-errors';
 export interface RejectMemberInput {
   readonly communityId: CommunityId;
   readonly targetMemberId: CommunityMemberId;
+  readonly occurredAt: Date;
 }
 
 // ============================================================
@@ -20,7 +26,7 @@ export interface RejectMemberInput {
 /**
  * メンバー拒否ユースケース
  *
- * メンバーレコードを削除する。
+ * メンバーレコードを削除し、MemberRejected を発火する。
  * 権限チェックはミドルウェアで実施済みのため、ここでは行わない。
  */
 export type RejectMemberCommand = (
@@ -29,7 +35,8 @@ export type RejectMemberCommand = (
 
 export function createRejectMemberCommand(
   communityRepository: CommunityRepository,
-  communityMemberRepository: CommunityMemberRepository
+  communityMemberRepository: CommunityMemberRepository,
+  eventBus: InMemoryEventBus<CommunityDomainEvent>
 ): RejectMemberCommand {
   return async (command) => {
     // コミュニティ存在チェック
@@ -46,6 +53,16 @@ export function createRejectMemberCommand(
 
     // メンバーレコードを削除
     await communityMemberRepository.delete(targetMember.id);
+
+    // イベント発火
+    const event: MemberRejectedEvent = {
+      type: 'MemberRejected',
+      communityId: targetMember.communityId,
+      memberId: targetMember.id,
+      accountId: targetMember.accountId,
+      occurredAt: command.occurredAt,
+    };
+    await eventBus.publish(event);
 
     return ok(undefined);
   };

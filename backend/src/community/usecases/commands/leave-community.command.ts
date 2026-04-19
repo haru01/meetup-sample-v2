@@ -1,9 +1,14 @@
 import { ok, err, type Result } from '@shared/result';
 import type { AccountId, CommunityId, CommunityMemberId } from '@shared/schemas/common';
+import type { InMemoryEventBus } from '@shared/event-bus';
 import { leaveCommunity } from '../../models/community-member';
 import type { CommunityRepository } from '../../repositories/community.repository';
 import type { CommunityMemberRepository } from '../../repositories/community-member.repository';
-import type { LeaveCommunityError } from '../../errors/community-errors';
+import type {
+  CommunityDomainEvent,
+  LeaveCommunityError,
+  MemberLeftEvent,
+} from '../../errors/community-errors';
 
 // ============================================================
 // コミュニティ脱退コマンド
@@ -14,6 +19,7 @@ export interface LeaveCommunityInput {
   readonly accountId: AccountId;
   /** メンバーID指定で脱退する場合（所有者確認を行う） */
   readonly memberId?: CommunityMemberId;
+  readonly occurredAt: Date;
 }
 
 // ============================================================
@@ -23,7 +29,7 @@ export interface LeaveCommunityInput {
 /**
  * コミュニティ脱退ユースケース
  *
- * メンバーをコミュニティから削除する。オーナーは脱退不可。
+ * メンバーをコミュニティから削除し、MemberLeft を発火する。オーナーは脱退不可。
  * memberId が指定された場合、そのメンバーが accountId の所有であることを確認する。
  */
 export type LeaveCommunityCommand = (
@@ -32,7 +38,8 @@ export type LeaveCommunityCommand = (
 
 export function createLeaveCommunityCommand(
   communityRepository: CommunityRepository,
-  communityMemberRepository: CommunityMemberRepository
+  communityMemberRepository: CommunityMemberRepository,
+  eventBus: InMemoryEventBus<CommunityDomainEvent>
 ): LeaveCommunityCommand {
   return async (command) => {
     // コミュニティ存在チェック
@@ -66,6 +73,16 @@ export function createLeaveCommunityCommand(
 
     // メンバーレコードを削除
     await communityMemberRepository.delete(member.id);
+
+    // イベント発火
+    const event: MemberLeftEvent = {
+      type: 'MemberLeft',
+      communityId: member.communityId,
+      memberId: member.id,
+      accountId: member.accountId,
+      occurredAt: command.occurredAt,
+    };
+    await eventBus.publish(event);
 
     return ok(undefined);
   };

@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { InMemoryEventBus } from '@shared/event-bus';
 import { createJoinCommunityCommand } from '../join-community.command';
 import type { CommunityRepository } from '../../../repositories/community.repository';
 import type { CommunityMemberRepository } from '../../../repositories/community-member.repository';
 import type { Community } from '../../../models/community';
 import type { CommunityMember } from '../../../models/community-member';
+import type { CommunityDomainEvent } from '../../../errors/community-errors';
 import { testCommunityId, testCommunityMemberId, testAccountId } from '@shared/testing/test-ids';
+
+const occurredAt = new Date('2026-02-01T00:00:00Z');
 
 // ============================================================
 // テスト用フィクスチャ
@@ -65,12 +69,14 @@ const makeMemberRepository = (): CommunityMemberRepository => ({
 describe('JoinCommunityCommand', () => {
   let communityRepo: CommunityRepository;
   let memberRepo: CommunityMemberRepository;
+  let eventBus: InMemoryEventBus<CommunityDomainEvent>;
   let useCase: ReturnType<typeof createJoinCommunityCommand>;
 
   beforeEach(() => {
     communityRepo = makeCommunityRepository();
     memberRepo = makeMemberRepository();
-    useCase = createJoinCommunityCommand(communityRepo, memberRepo);
+    eventBus = new InMemoryEventBus<CommunityDomainEvent>();
+    useCase = createJoinCommunityCommand(communityRepo, memberRepo, eventBus);
   });
 
   describe('正常系', () => {
@@ -79,6 +85,7 @@ describe('JoinCommunityCommand', () => {
         communityId: publicCommunity.id,
         accountId,
         memberId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(true);
@@ -96,6 +103,7 @@ describe('JoinCommunityCommand', () => {
         communityId: privateCommunity.id,
         accountId,
         memberId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(true);
@@ -109,9 +117,57 @@ describe('JoinCommunityCommand', () => {
         communityId: publicCommunity.id,
         accountId,
         memberId,
+        occurredAt,
       });
 
       expect(memberRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('PUBLIC のとき MemberJoined イベントを発行する', async () => {
+      const handler = vi.fn();
+      eventBus.subscribe('MemberJoined', handler);
+
+      await useCase({
+        communityId: publicCommunity.id,
+        accountId,
+        memberId,
+        occurredAt,
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'MemberJoined',
+          communityId: publicCommunity.id,
+          accountId,
+          memberId,
+          occurredAt,
+        })
+      );
+    });
+
+    it('PRIVATE のとき MemberApplicationSubmitted イベントを発行する', async () => {
+      vi.mocked(communityRepo.findById).mockResolvedValue(privateCommunity);
+      const handler = vi.fn();
+      eventBus.subscribe('MemberApplicationSubmitted', handler);
+
+      await useCase({
+        communityId: privateCommunity.id,
+        accountId,
+        memberId,
+        occurredAt,
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'MemberApplicationSubmitted',
+          communityId: privateCommunity.id,
+          accountId,
+          memberId,
+          occurredAt,
+        })
+      );
     });
   });
 
@@ -123,6 +179,7 @@ describe('JoinCommunityCommand', () => {
         communityId: testCommunityId('non-existent'),
         accountId,
         memberId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(false);
@@ -138,12 +195,31 @@ describe('JoinCommunityCommand', () => {
         communityId: publicCommunity.id,
         accountId,
         memberId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error.type).toBe('AlreadyMember');
       }
+    });
+
+    it('異常系ではイベントを発行しない', async () => {
+      vi.mocked(communityRepo.findById).mockResolvedValue(null);
+      const joinedHandler = vi.fn();
+      const submittedHandler = vi.fn();
+      eventBus.subscribe('MemberJoined', joinedHandler);
+      eventBus.subscribe('MemberApplicationSubmitted', submittedHandler);
+
+      await useCase({
+        communityId: testCommunityId('non-existent'),
+        accountId,
+        memberId,
+        occurredAt,
+      });
+
+      expect(joinedHandler).not.toHaveBeenCalled();
+      expect(submittedHandler).not.toHaveBeenCalled();
     });
   });
 });

@@ -62,6 +62,7 @@ export function createMemberRouter(deps: MemberDependencies): Router {
       communityId,
       accountId,
       memberId,
+      occurredAt: new Date(),
     });
 
     if (!result.ok) {
@@ -83,6 +84,7 @@ export function createMemberRouter(deps: MemberDependencies): Router {
     const result = await leaveCommunityCommand({
       communityId,
       accountId,
+      occurredAt: new Date(),
     });
 
     if (!result.ok) {
@@ -106,6 +108,7 @@ export function createMemberRouter(deps: MemberDependencies): Router {
       communityId,
       accountId,
       memberId,
+      occurredAt: new Date(),
     });
 
     if (!result.ok) {
@@ -167,6 +170,7 @@ export function createMemberRouter(deps: MemberDependencies): Router {
       const result = await approveMemberCommand({
         communityId,
         targetMemberId,
+        occurredAt: new Date(),
       });
 
       if (!result.ok) {
@@ -193,6 +197,7 @@ export function createMemberRouter(deps: MemberDependencies): Router {
       const result = await rejectMemberCommand({
         communityId,
         targetMemberId,
+        occurredAt: new Date(),
       });
 
       if (!result.ok) {

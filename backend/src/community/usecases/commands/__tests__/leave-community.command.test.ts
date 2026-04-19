@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { InMemoryEventBus } from '@shared/event-bus';
 import { createLeaveCommunityCommand } from '../leave-community.command';
 import type { CommunityRepository } from '../../../repositories/community.repository';
 import type { CommunityMemberRepository } from '../../../repositories/community-member.repository';
 import type { Community } from '../../../models/community';
 import type { CommunityMember } from '../../../models/community-member';
+import type { CommunityDomainEvent } from '../../../errors/community-errors';
 import { testCommunityId, testCommunityMemberId, testAccountId } from '@shared/testing/test-ids';
+
+const occurredAt = new Date('2026-02-01T00:00:00Z');
 
 // ============================================================
 // テスト用フィクスチャ
@@ -64,12 +68,14 @@ const makeMemberRepository = (): CommunityMemberRepository => ({
 describe('LeaveCommunityCommand', () => {
   let communityRepo: CommunityRepository;
   let memberRepo: CommunityMemberRepository;
+  let eventBus: InMemoryEventBus<CommunityDomainEvent>;
   let useCase: ReturnType<typeof createLeaveCommunityCommand>;
 
   beforeEach(() => {
     communityRepo = makeCommunityRepository();
     memberRepo = makeMemberRepository();
-    useCase = createLeaveCommunityCommand(communityRepo, memberRepo);
+    eventBus = new InMemoryEventBus<CommunityDomainEvent>();
+    useCase = createLeaveCommunityCommand(communityRepo, memberRepo, eventBus);
   });
 
   describe('正常系', () => {
@@ -77,10 +83,33 @@ describe('LeaveCommunityCommand', () => {
       const result = await useCase({
         communityId: community.id,
         accountId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(true);
       expect(memberRepo.delete).toHaveBeenCalledWith(memberId);
+    });
+
+    it('MemberLeft イベントを発行する', async () => {
+      const handler = vi.fn();
+      eventBus.subscribe('MemberLeft', handler);
+
+      await useCase({
+        communityId: community.id,
+        accountId,
+        occurredAt,
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'MemberLeft',
+          communityId: community.id,
+          memberId,
+          accountId,
+          occurredAt,
+        })
+      );
     });
   });
 
@@ -92,6 +121,7 @@ describe('LeaveCommunityCommand', () => {
         communityId: community.id,
         accountId,
         memberId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(true);
@@ -109,6 +139,7 @@ describe('LeaveCommunityCommand', () => {
         communityId: community.id,
         accountId,
         memberId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(false);
@@ -124,6 +155,7 @@ describe('LeaveCommunityCommand', () => {
         communityId: community.id,
         accountId,
         memberId: testCommunityMemberId('non-existent'),
+        occurredAt,
       });
 
       expect(result.ok).toBe(false);
@@ -140,6 +172,7 @@ describe('LeaveCommunityCommand', () => {
       const result = await useCase({
         communityId: testCommunityId('non-existent'),
         accountId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(false);
@@ -154,6 +187,7 @@ describe('LeaveCommunityCommand', () => {
       const result = await useCase({
         communityId: community.id,
         accountId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(false);
@@ -168,12 +202,27 @@ describe('LeaveCommunityCommand', () => {
       const result = await useCase({
         communityId: community.id,
         accountId: ownerMember.accountId,
+        occurredAt,
       });
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.error.type).toBe('OwnerCannotLeave');
       }
+    });
+
+    it('異常系ではイベントを発行しない', async () => {
+      vi.mocked(memberRepo.findByIds).mockResolvedValue(ownerMember);
+      const handler = vi.fn();
+      eventBus.subscribe('MemberLeft', handler);
+
+      await useCase({
+        communityId: community.id,
+        accountId: ownerMember.accountId,
+        occurredAt,
+      });
+
+      expect(handler).not.toHaveBeenCalled();
     });
   });
 });

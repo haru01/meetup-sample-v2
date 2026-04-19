@@ -5,7 +5,11 @@ import { createCommunity } from '../../models/community';
 import type { CommunityCategory, CommunityVisibility } from '../../models/schemas/community.schema';
 import type { CommunityRepository } from '../../repositories/community.repository';
 import type { CommunityMemberRepository } from '../../repositories/community-member.repository';
-import type { CreateCommunityError, CommunityCreatedEvent } from '../../errors/community-errors';
+import type {
+  CreateCommunityError,
+  CommunityCreatedEvent,
+  CommunityDomainEvent,
+} from '../../errors/community-errors';
 
 /** 1ユーザーあたりの最大コミュニティ作成数 */
 const MAX_COMMUNITIES_PER_USER = 10;
@@ -47,7 +51,7 @@ export type CreateCommunityCommand = (
 export function createCreateCommunityCommand(
   communityRepository: CommunityRepository,
   communityMemberRepository: CommunityMemberRepository,
-  eventBus: InMemoryEventBus<CommunityCreatedEvent>
+  eventBus: InMemoryEventBus<CommunityDomainEvent>
 ): CreateCommunityCommand {
   return async (command) => {
     // 名前重複チェック
