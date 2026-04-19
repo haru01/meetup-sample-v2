@@ -32,3 +32,7 @@ npm-debug.log*
 coverage/
 test-results/
 e2e/test-results/
+
+# Claude Code local overrides
+CLAUDE.local.md
+.claude/settings.local.json
