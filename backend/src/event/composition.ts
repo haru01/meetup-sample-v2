@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { Router } from 'express';
+import { InMemoryEventBus } from '@shared/event-bus';
 import { createRequireCommunityRole } from '@shared/middleware/community-role.middleware';
 import { PrismaCommunityRepository } from '@community/repositories/prisma-community.repository';
 import { PrismaCommunityMemberRepository } from '@community/repositories/prisma-community-member.repository';
@@ -10,6 +11,7 @@ import {
   type CreateEventCommand,
 } from './usecases/commands/create-event.command';
 import { createCommunityEventRouter } from './controllers/community-event.controller';
+import type { EventCreatedEvent } from './errors/event-errors';
 
 // ============================================================
 // Event コンテキスト 依存性構成
@@ -24,8 +26,13 @@ export function createEventDependencies(prisma: PrismaClient): EventContextDepen
   const eventRepository = new PrismaEventRepository(prisma);
   const communityRepository = new PrismaCommunityRepository(prisma);
   const communityMemberRepository = new PrismaCommunityMemberRepository(prisma);
+  const eventBus = new InMemoryEventBus<EventCreatedEvent>();
 
-  const createEventCommand = createCreateEventCommand(communityRepository, eventRepository);
+  const createEventCommand = createCreateEventCommand(
+    communityRepository,
+    eventRepository,
+    eventBus
+  );
 
   const communityEventRouter = createCommunityEventRouter({
     createEventCommand,

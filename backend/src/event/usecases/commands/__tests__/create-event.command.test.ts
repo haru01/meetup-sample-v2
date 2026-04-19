@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { InMemoryEventBus } from '@shared/event-bus';
 import { createCreateEventCommand } from '../create-event.command';
 import type { CreateEventInput } from '../create-event.command';
 import type { CommunityRepository } from '@community/repositories/community.repository';
 import type { EventRepository } from '../../../repositories/event.repository';
+import type { EventCreatedEvent } from '../../../errors/event-errors';
 import { testEventId, testCommunityId, testAccountId } from '@shared/testing/test-ids';
 
 const now = new Date('2026-01-01T00:00:00Z');
@@ -48,12 +50,14 @@ const makeEventRepository = (): EventRepository => ({
 describe('CreateEventCommand', () => {
   let communityRepo: CommunityRepository;
   let eventRepo: EventRepository;
+  let eventBus: InMemoryEventBus<EventCreatedEvent>;
   let useCase: ReturnType<typeof createCreateEventCommand>;
 
   beforeEach(() => {
     communityRepo = makeCommunityRepository();
     eventRepo = makeEventRepository();
-    useCase = createCreateEventCommand(communityRepo, eventRepo);
+    eventBus = new InMemoryEventBus<EventCreatedEvent>();
+    useCase = createCreateEventCommand(communityRepo, eventRepo, eventBus);
   });
 
   describe('正常系', () => {
@@ -73,6 +77,36 @@ describe('CreateEventCommand', () => {
       const cmd = makeCommand();
       await useCase(cmd);
       expect(eventRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('EventCreated イベントを発行する', async () => {
+      const cmd = makeCommand();
+      const handler = vi.fn();
+      eventBus.subscribe('EventCreated', handler);
+
+      await useCase(cmd);
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'EventCreated',
+          eventId: cmd.id,
+          communityId: cmd.communityId,
+          createdBy: cmd.createdBy,
+          title: cmd.title,
+          occurredAt: cmd.createdAt,
+        })
+      );
+    });
+
+    it('異常系ではイベントを発行しない', async () => {
+      vi.mocked(communityRepo.findById).mockResolvedValue(null);
+      const handler = vi.fn();
+      eventBus.subscribe('EventCreated', handler);
+
+      await useCase(makeCommand());
+
+      expect(handler).not.toHaveBeenCalled();
     });
   });
 
