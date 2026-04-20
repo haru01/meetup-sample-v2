@@ -3,15 +3,20 @@ import type { Request, Response } from 'express';
 import type { PrismaClient } from '@prisma/client';
 import { requireAuth, optionalAuth } from '@shared/middleware/auth.middleware';
 import { createEventId } from '@shared/schemas/id-factories';
-import type { AccountId, CommunityId } from '@shared/schemas/common';
+import type { AccountId, CommunityId, EventId } from '@shared/schemas/common';
 import type { RequestHandler } from 'express';
 import type { Event } from '../models/event';
 import type { EventFormat } from '../models/schemas/event.schema';
 import type { CreateEventCommand } from '../usecases/commands/create-event.command';
-import { mapCreateEventErrorToResponse } from './event-error-mappings';
+import type { PublishEventCommand } from '../usecases/commands/publish-event.command';
+import {
+  mapCreateEventErrorToResponse,
+  mapPublishEventErrorToResponse,
+} from './event-error-mappings';
 
 export interface CommunityEventRouterDependencies {
   readonly createEventCommand: CreateEventCommand;
+  readonly publishEventCommand: PublishEventCommand;
   readonly requireCommunityRole: RequestHandler;
   readonly prisma: PrismaClient;
 }
@@ -112,6 +117,25 @@ function createCommunityEventHandler(createEventCommand: CreateEventCommand) {
   };
 }
 
+function publishCommunityEventHandler(publishEventCommand: PublishEventCommand) {
+  return async (req: Request, res: Response): Promise<void> => {
+    const result = await publishEventCommand({
+      communityId: req.params['id'] as CommunityId,
+      eventId: req.params['eventId'] as EventId,
+      publishedBy: req.accountId as AccountId,
+      occurredAt: new Date(),
+    });
+
+    if (!result.ok) {
+      const { status, response } = mapPublishEventErrorToResponse(result.error);
+      res.status(status).json(response);
+      return;
+    }
+
+    res.status(200).json({ event: toEventResponse(result.value) });
+  };
+}
+
 export function createCommunityEventRouter(deps: CommunityEventRouterDependencies): Router {
   const router = Router({ mergeParams: true });
   router.get('/', optionalAuth, listCommunityEventsHandler(deps.prisma));
@@ -120,6 +144,12 @@ export function createCommunityEventRouter(deps: CommunityEventRouterDependencie
     requireAuth,
     deps.requireCommunityRole,
     createCommunityEventHandler(deps.createEventCommand)
+  );
+  router.patch(
+    '/:eventId/publish',
+    requireAuth,
+    deps.requireCommunityRole,
+    publishCommunityEventHandler(deps.publishEventCommand)
   );
   return router;
 }

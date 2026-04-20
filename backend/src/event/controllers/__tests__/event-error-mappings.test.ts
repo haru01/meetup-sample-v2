@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { mapCreateEventErrorToResponse } from '../event-error-mappings';
+import {
+  mapCreateEventErrorToResponse,
+  mapPublishEventErrorToResponse,
+} from '../event-error-mappings';
 
 describe('mapCreateEventErrorToResponse', () => {
   it('CommunityNotFound は 404 COMMUNITY_NOT_FOUND を返す', () => {
@@ -25,6 +28,25 @@ describe('mapCreateEventErrorToResponse', () => {
       response: {
         code: 'EVENT_END_BEFORE_START',
         message: '終了日時は開始日時より後でなければなりません',
+      },
+    });
+  });
+});
+
+describe('mapPublishEventErrorToResponse', () => {
+  it('EventNotFound は 404 EVENT_NOT_FOUND を返す', () => {
+    expect(mapPublishEventErrorToResponse({ type: 'EventNotFound' })).toEqual({
+      status: 404,
+      response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+    });
+  });
+
+  it('EventAlreadyPublished は 422 EVENT_ALREADY_PUBLISHED を返す', () => {
+    expect(mapPublishEventErrorToResponse({ type: 'EventAlreadyPublished' })).toEqual({
+      status: 422,
+      response: {
+        code: 'EVENT_ALREADY_PUBLISHED',
+        message: 'イベントは既に公開されているか、公開できない状態です',
       },
     });
   });

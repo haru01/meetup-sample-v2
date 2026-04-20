@@ -3,7 +3,11 @@ import type { InMemoryEventBus } from '@shared/event-bus';
 import { createEvent, type Event, type CreateEventInput } from '../../models/event';
 import type { EventRepository } from '../../repositories/event.repository';
 import type { CommunityRepository } from '@community/repositories/community.repository';
-import type { CreateEventError, EventCreatedEvent } from '../../errors/event-errors';
+import type {
+  CreateEventError,
+  EventCreatedEvent,
+  EventDomainEvent,
+} from '../../errors/event-errors';
 
 export type { CreateEventInput };
 
@@ -14,7 +18,7 @@ export type CreateEventCommand = (
 export function createCreateEventCommand(
   communityRepository: CommunityRepository,
   eventRepository: EventRepository,
-  eventBus: InMemoryEventBus<EventCreatedEvent>
+  eventBus: InMemoryEventBus<EventDomainEvent>
 ): CreateEventCommand {
   return async (command) => {
     const community = await communityRepository.findById(command.communityId);

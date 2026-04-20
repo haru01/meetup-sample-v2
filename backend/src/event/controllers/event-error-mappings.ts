@@ -1,5 +1,5 @@
 import type { ErrorResponse } from '@shared/controllers/error-response';
-import type { CreateEventError } from '../errors/event-errors';
+import type { CreateEventError, PublishEventError } from '../errors/event-errors';
 
 // ============================================================
 // HTTP レスポンスマッピング
@@ -26,6 +26,24 @@ export function mapCreateEventErrorToResponse(error: CreateEventError): ErrorRes
         response: {
           code: 'EVENT_END_BEFORE_START',
           message: '終了日時は開始日時より後でなければなりません',
+        },
+      };
+  }
+}
+
+export function mapPublishEventErrorToResponse(error: PublishEventError): ErrorResponse {
+  switch (error.type) {
+    case 'EventNotFound':
+      return {
+        status: 404,
+        response: { code: 'EVENT_NOT_FOUND', message: 'イベントが見つかりません' },
+      };
+    case 'EventAlreadyPublished':
+      return {
+        status: 422,
+        response: {
+          code: 'EVENT_ALREADY_PUBLISHED',
+          message: 'イベントは既に公開されているか、公開できない状態です',
         },
       };
   }

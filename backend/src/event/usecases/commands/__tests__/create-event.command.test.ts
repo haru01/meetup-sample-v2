@@ -4,7 +4,7 @@ import { createCreateEventCommand } from '../create-event.command';
 import type { CreateEventInput } from '../create-event.command';
 import type { CommunityRepository } from '@community/repositories/community.repository';
 import type { EventRepository } from '../../../repositories/event.repository';
-import type { EventCreatedEvent } from '../../../errors/event-errors';
+import type { EventDomainEvent } from '../../../errors/event-errors';
 import { testEventId, testCommunityId, testAccountId } from '@shared/testing/test-ids';
 
 const now = new Date('2026-01-01T00:00:00Z');
@@ -50,13 +50,13 @@ const makeEventRepository = (): EventRepository => ({
 describe('CreateEventCommand', () => {
   let communityRepo: CommunityRepository;
   let eventRepo: EventRepository;
-  let eventBus: InMemoryEventBus<EventCreatedEvent>;
+  let eventBus: InMemoryEventBus<EventDomainEvent>;
   let useCase: ReturnType<typeof createCreateEventCommand>;
 
   beforeEach(() => {
     communityRepo = makeCommunityRepository();
     eventRepo = makeEventRepository();
-    eventBus = new InMemoryEventBus<EventCreatedEvent>();
+    eventBus = new InMemoryEventBus<EventDomainEvent>();
     useCase = createCreateEventCommand(communityRepo, eventRepo, eventBus);
   });
 

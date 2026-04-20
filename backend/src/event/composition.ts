@@ -10,8 +10,12 @@ import {
   createCreateEventCommand,
   type CreateEventCommand,
 } from './usecases/commands/create-event.command';
+import {
+  createPublishEventCommand,
+  type PublishEventCommand,
+} from './usecases/commands/publish-event.command';
 import { createCommunityEventRouter } from './controllers/community-event.controller';
-import type { EventCreatedEvent } from './errors/event-errors';
+import type { EventDomainEvent } from './errors/event-errors';
 
 // ============================================================
 // Event コンテキスト 依存性構成
@@ -19,6 +23,7 @@ import type { EventCreatedEvent } from './errors/event-errors';
 
 export interface EventContextDependencies {
   readonly createEventCommand: CreateEventCommand;
+  readonly publishEventCommand: PublishEventCommand;
   readonly communityEventRouter: Router;
 }
 
@@ -26,7 +31,7 @@ export function createEventDependencies(prisma: PrismaClient): EventContextDepen
   const eventRepository = new PrismaEventRepository(prisma);
   const communityRepository = new PrismaCommunityRepository(prisma);
   const communityMemberRepository = new PrismaCommunityMemberRepository(prisma);
-  const eventBus = new InMemoryEventBus<EventCreatedEvent>();
+  const eventBus = new InMemoryEventBus<EventDomainEvent>();
 
   const createEventCommand = createCreateEventCommand(
     communityRepository,
@@ -34,8 +39,11 @@ export function createEventDependencies(prisma: PrismaClient): EventContextDepen
     eventBus
   );
 
+  const publishEventCommand = createPublishEventCommand(eventRepository, eventBus);
+
   const communityEventRouter = createCommunityEventRouter({
     createEventCommand,
+    publishEventCommand,
     requireCommunityRole: createRequireCommunityRole(
       communityMemberRepository,
       CommunityMemberRole.OWNER,
@@ -46,6 +54,7 @@ export function createEventDependencies(prisma: PrismaClient): EventContextDepen
 
   return {
     createEventCommand,
+    publishEventCommand,
     communityEventRouter,
   };
 }

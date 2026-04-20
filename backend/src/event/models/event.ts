@@ -8,7 +8,10 @@ import type {
   Event,
 } from './schemas/event.schema';
 import { EventStatus } from './schemas/event.schema';
-import type { CreateEventValidationError } from '../errors/event-errors';
+import type {
+  CreateEventValidationError,
+  PublishEventTransitionError,
+} from '../errors/event-errors';
 
 export type { Event } from './schemas/event.schema';
 export { EventSchema } from './schemas/event.schema';
@@ -54,4 +57,18 @@ export function createEvent(input: CreateEventInput): Result<Event, CreateEventV
     createdAt: input.createdAt,
     updatedAt: input.updatedAt,
   });
+}
+
+// ============================================================
+// イベント公開（状態遷移）
+// ============================================================
+
+export function publishEvent(
+  event: Event,
+  updatedAt: Date
+): Result<Event, PublishEventTransitionError> {
+  if (event.status !== EventStatus.DRAFT) {
+    return err({ type: 'EventAlreadyPublished' });
+  }
+  return ok({ ...event, status: EventStatus.PUBLISHED, updatedAt });
 }

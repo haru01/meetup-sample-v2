@@ -168,3 +168,42 @@ registry.registerPath({
     },
   },
 });
+
+// PATCH /communities/{communityId}/events/{eventId}/publish - イベント公開（DRAFT → PUBLISHED）
+registry.registerPath({
+  method: 'patch',
+  path: '/communities/{communityId}/events/{eventId}/publish',
+  tags: ['Events'],
+  summary: 'イベントを公開する',
+  description:
+    'DRAFT のイベントを PUBLISHED に遷移させます。オーナーまたは管理者のみ操作可能です。',
+  security: [{ BearerAuth: [] }],
+  request: {
+    params: z.object({
+      communityId: UuidSchema.openapi({ description: 'コミュニティID' }),
+      eventId: UuidSchema.openapi({ description: 'イベントID' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'イベント公開成功',
+      content: { 'application/json': { schema: EventResponseSchema } },
+    },
+    401: {
+      description: '認証エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: '権限エラー',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: 'イベントが見つからない',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    422: {
+      description: 'すでに公開済みなど公開できない状態',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
