@@ -23,10 +23,10 @@ description: Facilitate DDD domain modeling sessions via EventStorming conversat
 | 5. RULE・ERR | 各 AGG の不変条件・エラーケースを掘る |
 | 6. 整合性チェック → 出力 | DML 整合性を確認してから Markdown レポートを最終更新 |
 
-フェーズ2完了直後に `doc/eventstorming/eventstorming-YYYYMMDD-HHMM.md` を生成し、render.py でブラウザプレビューを起動する。以降のフェーズ完了ごとに差分更新して再起動する：
+フェーズ2完了直後に `docs/eventstorming/eventstorming-YYYYMMDD-HHMM.md` を生成し、render.py でブラウザプレビューを起動する。以降のフェーズ完了ごとに差分更新して再起動する：
 
 ```bash
-python3 .claude/skills/eventstorming-facilitator/scripts/render.py doc/eventstorming/eventstorming-YYYYMMDD-HHMM.md
+python3 .claude/skills/eventstorming-facilitator/scripts/render.py docs/eventstorming/eventstorming-YYYYMMDD-HHMM.md
 ```
 
 ---
@@ -148,7 +148,7 @@ flow:
 
 **書き出し後の品質チェック（必須）：** MD ファイルを Write/Edit で書き出したら **必ず** Agent tool でサブエージェントを起動して表記品質をチェックさせる（`references/quality-check-agent.md` 参照）。
 
-**途中保存と再開：** ファイル `doc/eventstorming/eventstorming-YYYYMMDD-HHMM.md` に `## 再開ポイント` セクションを付けて保存。再開時は読み込んで継続、H・Q 番号は前回から引き継ぐ。
+**途中保存と再開：** ファイル `docs/eventstorming/eventstorming-YYYYMMDD-HHMM.md` に `## 再開ポイント` セクションを付けて保存。再開時は読み込んで継続、H・Q 番号は前回から引き継ぐ。
 
 ### MD ファイル出力形式
 
