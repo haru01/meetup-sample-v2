@@ -670,4 +670,146 @@ describe('PATCH /communities/:id/members/:memberId/reject — メンバー拒否
         .expect(401);
     });
   });
+
+  describe('存在しないメンバーを拒否しようとした場合', () => {
+    it('404 MEMBER_NOT_FOUND が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-reject-notfound@example.com',
+        'オーナー reject notfound'
+      );
+      const communityId = await コミュニティを作成する(owner.token, '拒否存在テスト', 'PRIVATE');
+
+      const nonExistentMemberId = '00000000-0000-0000-0000-000000000000';
+
+      const res = await request(app)
+        .patch(`/communities/${communityId}/members/${nonExistentMemberId}/reject`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(404);
+
+      expect(res.body.code).toBe('MEMBER_NOT_FOUND');
+    });
+  });
+});
+
+// ============================================================
+// DELETE /communities/:id/members/:memberId
+// ============================================================
+
+describe('DELETE /communities/:id/members/:memberId — memberId 指定でコミュニティ脱退', () => {
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  describe('メンバーが memberId 指定で脱退する場合', () => {
+    it('200 が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-leave-byid@example.com',
+        'オーナー leave byid'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'memberId 脱退テスト',
+        'PUBLIC'
+      );
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member-leave-byid@example.com',
+        'メンバー leave byid'
+      );
+      const joinRes = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+
+      const memberId = joinRes.body.id as string;
+
+      await request(app)
+        .delete(`/communities/${communityId}/members/${memberId}`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(200);
+    });
+  });
+
+  describe('オーナーが自身の memberId で脱退しようとした場合', () => {
+    it('422 OWNER_CANNOT_LEAVE が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-leave-byid-owner@example.com',
+        'オーナー leave byid owner'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        'オーナー memberId 脱退テスト',
+        'PUBLIC'
+      );
+
+      const membersRes = await request(app)
+        .get(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+
+      const ownerMemberId = membersRes.body.members[0].id as string;
+
+      const res = await request(app)
+        .delete(`/communities/${communityId}/members/${ownerMemberId}`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(422);
+
+      expect(res.body.code).toBe('OWNER_CANNOT_LEAVE');
+    });
+  });
+
+  describe('認証トークンがない場合', () => {
+    it('401 が返ること', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      await request(app)
+        .delete(`/communities/${nonExistentId}/members/${nonExistentId}`)
+        .expect(401);
+    });
+  });
+});
+
+// ============================================================
+// PATCH approve ドメインエラーケース
+// ============================================================
+
+describe('PATCH /communities/:id/members/:memberId/approve — ドメインエラー', () => {
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  describe('既に ACTIVE なメンバーを承認しようとした場合', () => {
+    it('422 MEMBER_ALREADY_ACTIVE が返ること', async () => {
+      const owner = await アカウントを登録してトークンを取得する(
+        'owner-approve-already@example.com',
+        'オーナー approve already'
+      );
+      const communityId = await コミュニティを作成する(
+        owner.token,
+        '承認済み再承認テスト',
+        'PRIVATE'
+      );
+
+      const member = await アカウントを登録してトークンを取得する(
+        'member-approve-already@example.com',
+        'メンバー approve already'
+      );
+      const joinRes = await request(app)
+        .post(`/communities/${communityId}/members`)
+        .set('Authorization', `Bearer ${member.token}`)
+        .expect(201);
+      const memberId = joinRes.body.id as string;
+
+      await request(app)
+        .patch(`/communities/${communityId}/members/${memberId}/approve`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(200);
+
+      const res = await request(app)
+        .patch(`/communities/${communityId}/members/${memberId}/approve`)
+        .set('Authorization', `Bearer ${owner.token}`)
+        .expect(422);
+
+      expect(res.body.code).toBe('MEMBER_ALREADY_ACTIVE');
+    });
+  });
 });

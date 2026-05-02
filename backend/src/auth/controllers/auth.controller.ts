@@ -3,7 +3,6 @@ import type { Request, Response } from 'express';
 import { createAccountId } from '@shared/schemas/id-factories';
 import { mapRegisterAccountErrorToResponse, mapLoginErrorToResponse } from './auth-error-mappings';
 import type { AuthDependencies } from '../composition';
-import type { Account } from '../models/account';
 import { requireAuth } from '@shared/middleware/auth.middleware';
 import type { AccountId } from '@shared/schemas/common';
 
@@ -14,7 +13,12 @@ import type { AccountId } from '@shared/schemas/common';
 /**
  * アカウントレスポンス形式に変換（passwordHashを除外）
  */
-function toAccountResponse(account: Account): Record<string, unknown> {
+function toAccountResponse(account: {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}): Record<string, unknown> {
   return {
     id: account.id,
     name: account.name,
@@ -76,15 +80,7 @@ export function createAuthRouter(deps: AuthDependencies): Router {
     }
 
     const { token, account } = result.value;
-    res.status(200).json({
-      token,
-      account: {
-        id: account.id,
-        name: account.name,
-        email: account.email,
-        createdAt: account.createdAt.toISOString(),
-      },
-    });
+    res.status(200).json({ token, account: toAccountResponse(account) });
   });
 
   /**

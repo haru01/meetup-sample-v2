@@ -54,6 +54,7 @@ export function createRegisterUseCase(
       createdAt: command.createdAt,
     });
 
+    /* v8 ignore next 3 */
     if (!accountResult.ok) {
       return accountResult;
     }

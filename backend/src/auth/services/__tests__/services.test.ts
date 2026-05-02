@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import jwt from 'jsonwebtoken';
 import { BcryptPasswordHasher } from '../bcrypt-password-hasher';
 import { JwtTokenService } from '../jwt-token-service';
 
@@ -54,6 +55,12 @@ describe('JwtTokenService', () => {
   it('別のsecretで署名されたトークンはverifyするとnullを返す', () => {
     const otherService = new JwtTokenService('other-secret');
     const token = otherService.generate({ accountId: 'account-123' });
+    const result = service.verify(token);
+    expect(result).toBeNull();
+  });
+
+  it('accountId が文字列でないトークンを verify するとnullを返す', () => {
+    const token = jwt.sign({ accountId: 123 }, TEST_SECRET, { expiresIn: 86400 });
     const result = service.verify(token);
     expect(result).toBeNull();
   });

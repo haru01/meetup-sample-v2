@@ -176,3 +176,75 @@ describe('POST /auth/login', () => {
     });
   });
 });
+
+// ============================================================
+// GET /auth/me E2E テスト
+// ============================================================
+
+describe('GET /auth/me', () => {
+  let prisma: PrismaClient;
+  let app: ReturnType<typeof createApp>;
+
+  beforeAll(() => {
+    prisma = createTestPrismaClient();
+    app = createApp(prisma);
+  });
+
+  beforeEach(async () => {
+    await clearAuthTables(prisma);
+  });
+
+  afterAll(async () => {
+    await cleanupTestPrismaClient(prisma);
+  });
+
+  describe('有効なトークンの場合', () => {
+    it('200 が返り、アカウント情報（passwordHash なし）が含まれること', async () => {
+      const registerRes = await request(app)
+        .post('/auth/register')
+        .send({ name: '現在のユーザー', email: 'me@example.com', password: 'password123' })
+        .expect(201);
+      const token = registerRes.body.token as string;
+
+      const res = await request(app)
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body.account).toBeDefined();
+      expect(res.body.account.email).toBe('me@example.com');
+      expect(res.body.account.name).toBe('現在のユーザー');
+      expect(res.body.account.passwordHash).toBeUndefined();
+    });
+  });
+
+  describe('認証トークンがない場合', () => {
+    it('401 が返ること', async () => {
+      await request(app).get('/auth/me').expect(401);
+    });
+  });
+
+  describe('無効なトークンの場合', () => {
+    it('401 が返ること', async () => {
+      await request(app)
+        .get('/auth/me')
+        .set('Authorization', 'Bearer invalid.token.here')
+        .expect(401);
+    });
+  });
+
+  describe('アカウントが削除済みの場合', () => {
+    it('404 が返ること', async () => {
+      const registerRes = await request(app)
+        .post('/auth/register')
+        .send({ name: '削除ユーザー', email: 'deleted@example.com', password: 'password123' })
+        .expect(201);
+      const token = registerRes.body.token as string;
+      const accountId = registerRes.body.account.id as string;
+
+      await prisma.account.delete({ where: { id: accountId } });
+
+      await request(app).get('/auth/me').set('Authorization', `Bearer ${token}`).expect(404);
+    });
+  });
+});
