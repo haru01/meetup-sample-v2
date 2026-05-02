@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Run commands in a git worktree using the existing dev container
-# Usage: ./scripts/docker-worktree.sh <worktree-dir-name> [command]
+# Usage: ./scripts/docker-worktree.sh <branch-name> [command]
 #
 # Example:
-#   git worktree add ../meetup-sample-feature-xyz -b feature-xyz
-#   ./scripts/docker-worktree.sh meetup-sample-feature-xyz install
-#   ./scripts/docker-worktree.sh meetup-sample-feature-xyz test
-#   ./scripts/docker-worktree.sh meetup-sample-feature-xyz shell
+#   git worktree add .worktrees/feature-xyz -b feature-xyz
+#   ./scripts/docker-worktree.sh feature-xyz install
+#   ./scripts/docker-worktree.sh feature-xyz test
+#   ./scripts/docker-worktree.sh feature-xyz shell
 set -euo pipefail
 
 WORKTREE_NAME="${1:?Usage: $0 <worktree-dir-name> [command]}"
@@ -18,11 +18,11 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 export REPO_PARENT="$(cd "$PROJECT_DIR/.." && pwd)"
 export PROJECT_DIR_NAME="$(basename "$PROJECT_DIR")"
 
-WORKTREE_DIR="${REPO_PARENT}/${WORKTREE_NAME}"
+WORKTREE_DIR="${PROJECT_DIR}/.worktrees/${WORKTREE_NAME}"
 
 if [ ! -d "$WORKTREE_DIR" ]; then
   echo "Error: ${WORKTREE_DIR} does not exist"
-  echo "Create a worktree first: git worktree add ../${WORKTREE_NAME} -b <branch>"
+  echo "Create a worktree first: git worktree add .worktrees/${WORKTREE_NAME} -b ${WORKTREE_NAME}"
   exit 1
 fi
 

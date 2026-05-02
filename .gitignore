@@ -33,6 +33,9 @@ coverage/
 test-results/
 e2e/test-results/
 
+# Git worktrees
+.worktrees/
+
 # Claude Code local overrides
 CLAUDE.local.md
 .claude/settings.local.json

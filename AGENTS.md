@@ -43,11 +43,11 @@ d bash -c "cd backend && npx vitest run src/auth/usecases/__tests__/register.use
 d bash -c "cd frontend && npx vitest run src/auth/pages/__tests__/LoginPage.test.tsx"
 
 # Worktrees
-git worktree add ../meetup-sample-feature -b feature
-./scripts/docker-worktree.sh meetup-sample-feature install
-./scripts/docker-worktree.sh meetup-sample-feature test
-./scripts/docker-worktree.sh meetup-sample-feature shell
-git worktree remove ../meetup-sample-feature   # Cleanup worktree
+git worktree add .worktrees/feature -b feature
+./scripts/docker-worktree.sh feature install
+./scripts/docker-worktree.sh feature test
+./scripts/docker-worktree.sh feature shell
+git worktree remove .worktrees/feature         # Cleanup worktree
 git branch -d feature                          # Delete branch (if merged)
 
 # Docker 内 Claude Code（ホストから起動）
@@ -151,7 +151,7 @@ Playwright tests covering full user flows (auth, community, member). Config star
 
 ## Gotchas
 
-- Prisma schema is multi-file under `backend/prisma/schema/` (requires `prismaSchemaFolder` preview feature)
+- Prisma schema is multi-file under `backend/prisma/schema/` (`prismaSchemaFolder` is GA in Prisma 6.x, no longer a preview feature)
 - Path aliases (`@/`) resolved via `tsx` only (not with `node` directly)
 - ESM project (`"type": "module"`) — `tsx` handles import resolution
 - Frontend Vite proxy forwards `/auth`, `/communities`, `/health` to backend on port 3000
