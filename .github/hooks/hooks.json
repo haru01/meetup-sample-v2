@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "./.claude/hooks/dep-install-guard.sh",
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "./.claude/hooks/secret-leak-detector.sh",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
