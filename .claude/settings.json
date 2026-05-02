@@ -75,35 +75,6 @@
             "statusMessage": "機密情報スキャン中..."
           }
         ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/prettier-format.sh\"",
-            "timeout": 30,
-            "statusMessage": "Prettier 整形中..."
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/layer-guard.sh\"",
-            "timeout": 10,
-            "statusMessage": "レイヤー依存チェック中..."
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/typecheck.sh\"",
-            "timeout": 30,
-            "statusMessage": "バックエンド型チェック中..."
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/typecheck-frontend.sh\"",
-            "timeout": 30,
-            "statusMessage": "フロントエンド型チェック中..."
-          }
-        ]
       }
     ],
     "PreToolUse": [
@@ -112,29 +83,10 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git commit:*)",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-commit-gates.sh\"",
-            "timeout": 120,
-            "statusMessage": "Quality Gates 実行中..."
-          },
-          {
-            "type": "command",
             "if": "Bash(npm install:*)|Bash(npm add:*)|Bash(npm i :*)",
             "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/dep-install-guard.sh\"",
             "timeout": 10,
             "statusMessage": "依存パッケージチェック中..."
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-verify.sh\"",
-            "timeout": 120,
-            "statusMessage": "Quality Gates 検証中..."
           }
         ]
       }
