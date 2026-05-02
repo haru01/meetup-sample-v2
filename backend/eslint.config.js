@@ -32,5 +32,19 @@ export default tseslint.config(
       'max-lines-per-function': 'off',
       'max-lines': 'off',
     },
+  },
+  {
+    files: ['**/controllers/**/*.ts'],
+    ignores: ['**/controllers/**/*.test.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          { group: ['**/repositories/*'], message: 'Controller は composition 経由で repository を受け取ること' },
+          { group: ['**/prisma-*'], message: '実装に直接依存せず、composition 経由にすること' },
+          { group: ['**/bcrypt-*'], message: '実装に直接依存せず、composition 経由にすること' },
+          { group: ['**/jwt-*'], message: '実装に直接依存せず、composition 経由にすること' },
+        ],
+      }],
+    },
   }
 );
