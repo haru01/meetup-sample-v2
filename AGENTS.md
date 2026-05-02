@@ -13,7 +13,10 @@ alias d="./scripts/docker-dev.sh"
 
 # Setup
 d up                     # Build + start container
-d install                # npm install + prisma + db:push + playwright browsers
+d install                # npm install + prisma + db:push + playwright browsers + lefthook install
+
+# 初回セットアップ（lefthook の git pre-commit フックを有効化）
+lefthook install        # または: d bash -c "lefthook install"
 
 # Development
 d dev                    # Start backend + frontend dev servers
@@ -137,9 +140,28 @@ Playwright tests covering full user flows (auth, community, member). Config star
 
 ## Quality Gates
 
-- `d test` — Backend + frontend tests
-- `d bash -c "cd backend && npm run review"` — Layer deps, circular deps, complexity, type check, coverage (80%+)
+**git pre-commit（lefthook）:**
+- `lefthook install` で一度だけ有効化する（worktree ごとに実行が必要）
+- コミット時に prettier / eslint / tsc / vitest が自動実行される（`lefthook.yml` 参照）
+
+**AI ハーネス hook（Claude Code / Copilot CLI 共通）:**
+- `secret-leak-detector.sh` — Bash 出力に機密情報（JWT/AWS key/sk-*）が含まれていれば block
+- `dep-install-guard.sh` — `--save-dev` なしの `npm install` をブロック（slopsquatting 対策）
+
+**手動実行:**
+- `d test` — backend + frontend テスト
+- `d bash -c "cd backend && npm run review"` — 型チェック、カバレッジ (80%+) など総合チェック
 - `d bash -c "cd backend && npm run lint"` / `d bash -c "cd frontend && npm run lint"`
+
+## AI Harness Compatibility
+
+このプロジェクトは **Claude Code** と **GitHub Copilot CLI** の両方で動作するよう設計されています。
+
+- **Skills:** `.claude/skills/` 配下のスキルは両ハーネスが auto-discover します
+- **Hooks:** AI 専用 hook は `secret-leak-detector.sh`（機密情報）と `dep-install-guard.sh`（依存関係）の 2 本のみ
+  - Claude Code 設定: `.claude/settings.json`
+  - Copilot CLI 設定: `.github/hooks/hooks.json`
+- **品質ゲート:** lint/typecheck/test/format は `lefthook.yml` の git pre-commit で管理（AI 非依存）
 
 ## Security
 
