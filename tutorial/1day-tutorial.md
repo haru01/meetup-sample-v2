@@ -508,11 +508,13 @@ claude
 ```bash
 ./scripts/docker-dev.sh bash -c "cd backend && npm run test:coverage"
 ./scripts/docker-dev.sh bash -c "cd backend && npm run review"
+./scripts/docker-dev.sh bash -c "cd backend && npm run format:check"
 ```
 
 > **観察ポイント（ここで止まって見る）**:
 > - テストファイルが消えている状態で `test:coverage` は何を言うか？（カバレッジ閾値の扱いに注目）
 > - `review` コマンドは何を検出するか？（型チェック・循環依存・複雑度）
+> - `format:check` はどうか？（hooks がない状態でフォーマットが崩れているか）
 > - 実装中に lint / prettier が自動で走ったか？（hooks がない状態）
 > - エージェントが自発的にテストを書いたか、それとも実装だけで終わったか？
 > - エラーハンドリングのパターンは既存コードを踏んでいるか？
