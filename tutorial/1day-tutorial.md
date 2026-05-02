@@ -489,12 +489,12 @@ git add -A
 git commit -m "chore: ラウンド1用にハーネス一部を削除"
 ```
 
-さらに AGENTS.md（と CLAUDE.md）の `## Quality Gates` セクションを削除する（CLAUDE.md は `@AGENTS.md` で取り込んでいるため両方消す必要がある）：
+さらに AGENTS.md の `## Quality Gates` セクションを削除する（CLAUDE.md は `@AGENTS.md` でインポートしているため AGENTS.md だけ修正すれば両方から消える）：
 
 ```text
 （Claude Code に依頼）
-「AGENTS.md と CLAUDE.md の '## Quality Gates' セクション全体をそれぞれ削除して」
-git add AGENTS.md CLAUDE.md
+「AGENTS.md の '## Quality Gates' セクション全体を削除して」
+git add AGENTS.md
 git commit -m "chore: Quality Gates セクションを削除（ラウンド1実験用）"
 ```
 
@@ -550,7 +550,7 @@ claude
 計画を承認して実装させる。実装完了後、ペアでコードをレビューする：
 
 ```bash
-# 手動で品質ゲートを実行（hooks がないので自動実行されない）
+# 手動で品質ゲートを実行（AI hook がないため実装中のリアルタイムチェックが止まる。git コミット時の lefthook は引き続き動作する）
 ./scripts/docker-dev.sh bash -c "cd backend && npm run test:coverage"
 ./scripts/docker-dev.sh bash -c "cd backend && npm run review"
 ```
@@ -717,7 +717,7 @@ meetup-sample-v2/
 │   │   └── testing.md             # テスト方針・命名規則
 │   └── decision-logs/             # 意思決定記録（ADR）
 ├── .claude/
-│   ├── hooks/                     # 自動品質チェック（PostToolUse / Stop フック）
+│   ├── hooks/                     # 自動品質チェック（PostToolUse / PreToolUse フック）
 │   └── skills/                    # 日本語コミット・ADR記録 等
 └── 品質ゲート（test / lint / tsc / 循環依存チェック）
 ```

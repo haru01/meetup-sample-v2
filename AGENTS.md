@@ -143,6 +143,7 @@ Playwright tests covering full user flows (auth, community, member). Config star
 
 **AI ハーネス hook（Claude Code / Copilot CLI 共通）:**
 - `secret-leak-detector.sh` — Bash 出力に機密情報（JWT/AWS key/sk-*）が含まれていれば block
+- `lint-guard.sh` — Edit/Write 後にファイル単体を ESLint でチェック（レイヤー依存・複雑度をリアルタイム検出）
 - `dep-install-guard.sh` — `--save-dev` なしの `npm install` をブロック（slopsquatting 対策）
 
 **手動実行:**
@@ -155,7 +156,7 @@ Playwright tests covering full user flows (auth, community, member). Config star
 このプロジェクトは **Claude Code** と **GitHub Copilot CLI** の両方で動作するよう設計されています。
 
 - **Skills:** `.claude/skills/` 配下のスキルは両ハーネスが auto-discover します
-- **Hooks:** AI 専用 hook は `secret-leak-detector.sh`（機密情報）と `dep-install-guard.sh`（依存関係）の 2 本のみ
+- **Hooks:** AI 専用 hook は `secret-leak-detector.sh`（機密情報）・`lint-guard.sh`（ESLint）・`dep-install-guard.sh`（依存関係）の 3 本
   - Claude Code 設定: `.claude/settings.json`
   - Copilot CLI 設定: `.github/hooks/hooks.json`
 - **品質ゲート:** lint/typecheck/test/format は `lefthook.yml` の git pre-commit で管理（AI 非依存）
