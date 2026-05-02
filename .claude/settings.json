@@ -81,6 +81,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/prettier-format.sh\"",
+            "timeout": 15,
+            "statusMessage": "Prettier フォーマット中..."
+          },
+          {
+            "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-guard.sh\"",
             "timeout": 30,
             "statusMessage": "ESLint チェック中..."

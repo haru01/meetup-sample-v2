@@ -16,6 +16,11 @@
       },
       {
         "type": "command",
+        "bash": "./.claude/hooks/prettier-format.sh",
+        "timeoutSec": 15
+      },
+      {
+        "type": "command",
         "bash": "./.claude/hooks/lint-guard.sh",
         "timeoutSec": 30
       }
