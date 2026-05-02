@@ -149,10 +149,10 @@
 
 ```text
 ハーネスの例：
-- CLAUDE.md            → 技術スタック・ディレクトリ構造・命名規約
-- docs/conventions/   → コード品質ガイドライン・実装パターン
+- CLAUDE.md,AGENTS.md → 技術スタック・ディレクトリ構造・命名規約・実行コマンド・品質基準などを宣言
+- docs/conventions/   → テストガイドライン・実装パターン
 - docs/decision-logs/ → 設計上の意思決定記録（ADR）
-- .claude/hooks/      → 自動品質チェック（ファイル保存・コミット・セッション終了時に自動実行）
+- .claude/settings.json → Claude Code の権限・hook・環境変数を宣言（Edit/Write 後に ESLint 自動実行など）
 - テスト・Lint         → 品質の自動チェック
 ```
 
@@ -571,6 +571,8 @@ git commit -m "feat: PublishEvent ラウンド1実装"
 | 実装中フィードバック | Edit/Write のたびに ESLint が即時実行（lint-guard） | ESLint エラーが実装中に検出されなかった？ |
 | テスト実行タイミング | hooks なし → エージェントが自発的にテストを回したか | スキップされた？ 手動実行が必要だった？ |
 | エラーハンドリング | Result 型 + Discriminated Union | 既存コードを真似たか？ |
+
+備考：AIエージェントは既存コードを読んで推測するするため、ハーネスを弱めても完全に無視するわけではありません
 
 ### Step 4：ずれを抽出してハーネス改善案を書く（15分）
 
