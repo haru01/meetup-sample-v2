@@ -146,6 +146,10 @@ Playwright tests covering full user flows (auth, community, member). Config star
 - `lint-guard.sh` — Edit/Write 後にファイル単体を ESLint でチェック（レイヤー依存・複雑度をリアルタイム検出）
 - `dep-install-guard.sh` — `--save-dev` なしの `npm install` をブロック（slopsquatting 対策）
 
+**AI が実装完了前に必ず実行すること:**
+- `d bash -c "cd backend && npm run test:coverage"` — カバレッジ 80% 以上を確認
+- `d bash -c "cd backend && npm run review"` — 型チェック・循環依存・複雑度・カバレッジの総合確認
+
 **手動実行:**
 - `d test` — backend + frontend テスト
 - `d bash -c "cd backend && npm run review"` — 型チェック、カバレッジ (80%+) など総合チェック
