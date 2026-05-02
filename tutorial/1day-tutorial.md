@@ -269,6 +269,7 @@ Step 4: 検証                  品質ゲート（test / lint / tsc）を通す
 
 ```bash
 cd meetup-sample-v2
+./scripts/docker-dev.sh up
 ./scripts/docker-dev.sh install   # 依存関係インストール
 ./scripts/docker-dev.sh test      # テストが通ることを確認（全グリーンを確認）
 ```
@@ -278,6 +279,7 @@ cd meetup-sample-v2
 ```bash
 git checkout -b feature/publish-event-cli
 ```
+備考： ブランチをAIに作らせることもできる。
 
 **Step 2: プランモードで計画を立てる**
 
@@ -286,6 +288,8 @@ Claude Code を起動する：
 ```bash
 claude
 ```
+
+すでに起動中であればセッションを新しくする（`/clear` コマンドを入力するか、ターミナルを新しく開いて `claude` を実行する）。
 
 起動後、**Shift+Tab** を押してプランモードに切り替える（画面左下に `plan` と表示されたことを確認）。
 
