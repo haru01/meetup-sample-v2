@@ -13,6 +13,11 @@
         "type": "command",
         "bash": "./.claude/hooks/secret-leak-detector.sh",
         "timeoutSec": 10
+      },
+      {
+        "type": "command",
+        "bash": "./.claude/hooks/lint-guard.sh",
+        "timeoutSec": 30
       }
     ]
   }

@@ -1,9 +1,11 @@
 FROM node:24-bookworm
 
-# System dependencies: git, SQLite tools, Playwright browser deps
+# System dependencies: git, SQLite tools, jq, Playwright browser deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     sqlite3 \
+    jq \
+    curl \
     # Playwright Chromium dependencies
     libnss3 \
     libnspr4 \
@@ -44,6 +46,12 @@ RUN git config --system --add safe.directory '*'
 
 # Claude Code CLI (root でインストール、devuser から実行可能)
 RUN npm install -g @anthropic-ai/claude-code
+
+# lefthook for git hooks
+RUN curl -fsSL https://github.com/evilmartians/lefthook/releases/download/v1.10.4/lefthook_1.10.4_Linux_x86_64.gz -o lefthook.gz \
+    && gunzip lefthook.gz \
+    && chmod +x lefthook \
+    && mv lefthook /usr/local/bin/lefthook
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

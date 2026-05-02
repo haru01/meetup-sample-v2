@@ -75,6 +75,17 @@
             "statusMessage": "機密情報スキャン中..."
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-guard.sh\"",
+            "timeout": 30,
+            "statusMessage": "ESLint チェック中..."
+          }
+        ]
       }
     ],
     "PreToolUse": [

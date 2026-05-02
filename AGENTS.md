@@ -13,10 +13,7 @@ alias d="./scripts/docker-dev.sh"
 
 # Setup
 d up                     # Build + start container
-d install                # npm install + prisma + db:push + playwright browsers + lefthook install
-
-# 初回セットアップ（lefthook の git pre-commit フックを有効化）
-lefthook install        # または: d bash -c "lefthook install"
+d install                # npm install + prisma + db:push + playwright browsers (lefthook install は npm prepare で自動実行)
 
 # Development
 d dev                    # Start backend + frontend dev servers

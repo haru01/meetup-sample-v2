@@ -4,6 +4,9 @@
   "private": true,
   "description": "Meetup community management full-stack application",
   "workspaces": ["backend", "frontend", "e2e"],
+  "scripts": {
+    "prepare": "lefthook install"
+  },
   "engines": {
     "node": ">=20.0.0"
   }
