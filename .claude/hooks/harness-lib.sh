@@ -8,8 +8,7 @@ HARNESS_KIND=""
 # stdin を読み込み、ハーネスを検出する。必ず最初に呼ぶ。
 harness_init() {
   HARNESS_INPUT="$(cat)"
-  if echo "$HARNESS_INPUT" | jq -e '.hookEventName // empty' >/dev/null 2>&1 && \
-     [ -n "$(echo "$HARNESS_INPUT" | jq -r '.hookEventName // empty')" ]; then
+  if [ -n "$(echo "$HARNESS_INPUT" | jq -r '.hookEventName // empty')" ]; then
     HARNESS_KIND="copilot"
   else
     HARNESS_KIND="claude"
