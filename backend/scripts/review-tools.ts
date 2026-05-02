@@ -83,7 +83,7 @@ async function checkDependencies(target: string): Promise<CheckResult> {
   ]);
 
   try {
-    const jsonStr = success ? stdout : (stdout.match(/\{[\s\S]*\}/)?.[0] || '{}');
+    const jsonStr = success ? stdout : stdout.match(/\{[\s\S]*\}/)?.[0] || '{}';
     const result = JSON.parse(jsonStr);
 
     for (const violation of result.summary?.violations || []) {
@@ -339,28 +339,34 @@ async function checkCoverage(target: string): Promise<CheckResult> {
     totalBranch += branches.length;
     coveredBranch += branches.filter((v) => v > 0).length;
 
-    const linePct = calcPct(
-      stmts.filter((v) => v > 0).length,
-      stmts.length
-    );
-    const funcPct = calcPct(
-      funcs.filter((v) => v > 0).length,
-      funcs.length
-    );
-    const branchPct = calcPct(
-      branches.filter((v) => v > 0).length,
-      branches.length
-    );
+    const linePct = calcPct(stmts.filter((v) => v > 0).length, stmts.length);
+    const funcPct = calcPct(funcs.filter((v) => v > 0).length, funcs.length);
+    const branchPct = calcPct(branches.filter((v) => v > 0).length, branches.length);
     const file = relative(process.cwd(), filePath);
 
     if (linePct < COVERAGE_THRESHOLD) {
-      issues.push({ file, rule: 'coverage-lines', message: `行カバレッジ ${linePct}% < ${COVERAGE_THRESHOLD}%`, severity: 'warning' });
+      issues.push({
+        file,
+        rule: 'coverage-lines',
+        message: `行カバレッジ ${linePct}% < ${COVERAGE_THRESHOLD}%`,
+        severity: 'warning',
+      });
     }
     if (funcPct < COVERAGE_THRESHOLD) {
-      issues.push({ file, rule: 'coverage-functions', message: `関数カバレッジ ${funcPct}% < ${COVERAGE_THRESHOLD}%`, severity: 'warning' });
+      issues.push({
+        file,
+        rule: 'coverage-functions',
+        message: `関数カバレッジ ${funcPct}% < ${COVERAGE_THRESHOLD}%`,
+        severity: 'warning',
+      });
     }
     if (branchPct < COVERAGE_THRESHOLD) {
-      issues.push({ file, rule: 'coverage-branches', message: `分岐カバレッジ ${branchPct}% < ${COVERAGE_THRESHOLD}%`, severity: 'warning' });
+      issues.push({
+        file,
+        rule: 'coverage-branches',
+        message: `分岐カバレッジ ${branchPct}% < ${COVERAGE_THRESHOLD}%`,
+        severity: 'warning',
+      });
     }
   }
 
@@ -439,8 +445,7 @@ function formatReport(report: ReviewReport, jsonOutput: boolean): string {
       const issueLines = r.issues
         .slice(0, 5)
         .map(
-          (i) =>
-            `  - [${i.rule}] ${i.file}${i.line ? ':' + i.line : ''}: ${i.message.slice(0, 80)}`
+          (i) => `  - [${i.rule}] ${i.file}${i.line ? ':' + i.line : ''}: ${i.message.slice(0, 80)}`
         );
       if (r.issues.length > 5) issueLines.push(`  - ... 他 ${r.issues.length - 5}件`);
       lines.push(issueLines.join('\n'));

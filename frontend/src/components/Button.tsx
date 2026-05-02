@@ -1,24 +1,24 @@
-import { type ButtonHTMLAttributes } from 'react'
+import { type ButtonHTMLAttributes } from "react";
 
-type Variant = 'primary' | 'secondary' | 'danger'
+type Variant = "primary" | "secondary" | "danger";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: Variant
-  loading?: boolean
-}
+  variant?: Variant;
+  loading?: boolean;
+};
 
 const variantClasses: Record<Variant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-  secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-}
+  primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+  secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400",
+  danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+};
 
 export const Button = ({
-  variant = 'primary',
+  variant = "primary",
   loading = false,
   disabled,
   children,
-  className = '',
+  className = "",
   ...props
 }: ButtonProps) => {
   return (
@@ -27,7 +27,7 @@ export const Button = ({
       disabled={disabled || loading}
       {...props}
     >
-      {loading ? '読み込み中...' : children}
+      {loading ? "読み込み中..." : children}
     </button>
-  )
-}
+  );
+};

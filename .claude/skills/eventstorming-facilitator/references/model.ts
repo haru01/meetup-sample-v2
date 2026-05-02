@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export const IdSchema = z.object({
   uuid: z.string().uuid(),
-  slug: z.string().min(1).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
 });
 
 export const ConfidenceSchema = z.enum(["known", "assumed", "open"]);
@@ -70,7 +73,15 @@ export const AggregateSchema = z.object({
 export const QuestionSchema = z.object({
   id: IdSchema,
   text: z.string().min(1),
-  relatedType: z.enum(["event", "command", "policy", "actor", "context", "aggregate", "general"]),
+  relatedType: z.enum([
+    "event",
+    "command",
+    "policy",
+    "actor",
+    "context",
+    "aggregate",
+    "general",
+  ]),
   relatedSlug: z.string().optional(),
   status: z.enum(["open", "resolved"]).default("open"),
   owner: z.string().optional(),

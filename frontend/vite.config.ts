@@ -16,7 +16,10 @@ export default defineConfig({
           if (req.headers.accept?.includes("text/html")) return req.url;
         },
       },
-      "/participations": { target: "http://localhost:3000", changeOrigin: true },
+      "/participations": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
       "/scheduler": { target: "http://localhost:3000", changeOrigin: true },
       "/health": { target: "http://localhost:3000", changeOrigin: true },
     },

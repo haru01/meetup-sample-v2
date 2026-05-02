@@ -130,7 +130,9 @@ async function main() {
 
   // charlie = MEMBER (ACTIVE) of TypeScript勉強会
   await prisma.communityMember.upsert({
-    where: { communityId_accountId: { communityId: typescriptCommunity.id, accountId: charlie.id } },
+    where: {
+      communityId_accountId: { communityId: typescriptCommunity.id, accountId: charlie.id },
+    },
     update: {},
     create: {
       communityId: typescriptCommunity.id,
@@ -142,7 +144,9 @@ async function main() {
 
   console.log('Seed completed successfully');
   console.log(`Accounts: alice(${alice.id}), bob(${bob.id}), charlie(${charlie.id})`);
-  console.log(`Communities: TypeScript勉強会(${typescriptCommunity.id}), スタートアップ交流会(${startupCommunity.id}), 読書サークル(${bookCommunity.id})`);
+  console.log(
+    `Communities: TypeScript勉強会(${typescriptCommunity.id}), スタートアップ交流会(${startupCommunity.id}), 読書サークル(${bookCommunity.id})`
+  );
 }
 
 main()

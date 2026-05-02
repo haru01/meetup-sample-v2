@@ -14,12 +14,9 @@ export default tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      '@typescript-eslint/explicit-function-return-type': [
-        'warn',
-        { allowExpressions: true },
-      ],
+      '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'complexity': ['error', { max: 15 }],
+      complexity: ['error', { max: 15 }],
       'max-lines-per-function': ['warn', { max: 50, skipBlankLines: true, skipComments: true }],
       'max-lines': ['warn', { max: 400, skipBlankLines: true, skipComments: true }],
       'max-depth': ['warn', { max: 4 }],
@@ -37,14 +34,20 @@ export default tseslint.config(
     files: ['**/controllers/**/*.ts'],
     ignores: ['**/controllers/**/*.test.ts'],
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          { group: ['**/repositories/*'], message: 'Controller は composition 経由で repository を受け取ること' },
-          { group: ['**/prisma-*'], message: '実装に直接依存せず、composition 経由にすること' },
-          { group: ['**/bcrypt-*'], message: '実装に直接依存せず、composition 経由にすること' },
-          { group: ['**/jwt-*'], message: '実装に直接依存せず、composition 経由にすること' },
-        ],
-      }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/repositories/*'],
+              message: 'Controller は composition 経由で repository を受け取ること',
+            },
+            { group: ['**/prisma-*'], message: '実装に直接依存せず、composition 経由にすること' },
+            { group: ['**/bcrypt-*'], message: '実装に直接依存せず、composition 経由にすること' },
+            { group: ['**/jwt-*'], message: '実装に直接依存せず、composition 経由にすること' },
+          ],
+        },
+      ],
     },
   }
 );
