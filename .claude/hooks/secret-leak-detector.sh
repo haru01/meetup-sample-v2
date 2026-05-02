@@ -29,7 +29,7 @@ if echo "$OUTPUT" | grep -iqE '(password|passwd|secret|token)\s*[=:]\s*\S{8,}'; 
 fi
 
 if [ -n "$WARNINGS" ]; then
-  REASON="$(printf '機密情報リークの可能性:%s\nコンテキストに機密データが残っています。/clear の実行を検討してください。' "$WARNINGS")"
+  REASON="$(printf '機密情報リークの可能性:%b\nコンテキストに機密データが残っています。/clear の実行を検討してください。' "$WARNINGS")"
   harness_block "$REASON"
 fi
 

@@ -24,4 +24,5 @@ fi
 
 # それ以外の本番依存追加はブロック
 PKGS=$(echo "$COMMAND" | grep -oE '(npm install|npm add|npm i)\s+(.+)' | sed 's/npm [a-z]* //')
-harness_block "本番依存の追加を検出: $PKGS\n--save-dev (-D) を付けるか、本当に本番依存が必要か確認してください。"
+MSG="$(printf '本番依存の追加を検出: %s\n--save-dev (-D) を付けるか、本当に本番依存が必要か確認してください。' "$PKGS")"
+harness_block "$MSG"
