@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 # lefthook および AI hook 共通の品質チェックランナー
 # Usage: run-quality.sh "cd backend && npx tsc --noEmit"
+# 呼び出し元は信頼済みの lefthook / AI hook のみを想定
 #
 # 検出ロジック:
 #   1. Docker 内 (/.dockerenv 存在) → 直接実行
