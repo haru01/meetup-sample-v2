@@ -32,6 +32,13 @@ if [ -n "$GIT_COMMON_DIR" ] && [ -n "$GIT_DIR" ] && [ "$GIT_COMMON_DIR" != "$GIT
   REPO_PARENT="$(cd "$MAIN_PROJECT_DIR/.." && pwd)"
   PROJECT_DIR_NAME="$(basename "$MAIN_PROJECT_DIR")"
 
+  # コンテナが起動していない場合はスキップ
+  CONTAINER_STATUS="$(docker compose -f "$MAIN_PROJECT_DIR/docker-compose.yml" ps --status running --quiet dev 2>/dev/null)"
+  if [ -z "$CONTAINER_STATUS" ]; then
+    echo "Docker コンテナが起動していないためスキップします" >&2
+    exit 0
+  fi
+
   REPO_PARENT="$REPO_PARENT" PROJECT_DIR_NAME="$PROJECT_DIR_NAME" \
     docker compose -f "$MAIN_PROJECT_DIR/docker-compose.yml" \
     exec -u devuser -w "$PROJECT_DIR" dev bash -c "$CMD"
@@ -41,6 +48,12 @@ fi
 # 3. メインプロジェクト: docker-dev.sh 経由
 SCRIPT="$PROJECT_DIR/scripts/docker-dev.sh"
 if [ -x "$SCRIPT" ]; then
+  # コンテナが起動していない場合はスキップ（停止中に hook を block しない）
+  CONTAINER_STATUS="$(docker compose -f "$PROJECT_DIR/docker-compose.yml" ps --status running --quiet dev 2>/dev/null)"
+  if [ -z "$CONTAINER_STATUS" ]; then
+    echo "Docker コンテナが起動していないためスキップします" >&2
+    exit 0
+  fi
   "$SCRIPT" bash -c "$CMD"
   exit $?
 fi
