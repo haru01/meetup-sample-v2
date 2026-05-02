@@ -1,11 +1,10 @@
 #!/bin/bash
 # PostToolUse hook: Bash 出力に機密情報パターンが含まれていないかチェック
-INPUT=$(cat)
-OUTPUT=$(echo "$INPUT" | jq -r '.tool_output // empty')
+. "$(dirname "$0")/harness-lib.sh"
+harness_init
+OUTPUT="$(harness_tool_output)"
 
-if [ -z "$OUTPUT" ]; then
-  exit 0
-fi
+[ -z "$OUTPUT" ] && exit 0
 
 WARNINGS=""
 
@@ -30,9 +29,8 @@ if echo "$OUTPUT" | grep -iqE '(password|passwd|secret|token)\s*[=:]\s*\S{8,}'; 
 fi
 
 if [ -n "$WARNINGS" ]; then
-  REASON=$(echo -e "機密情報リークの可能性:$WARNINGS\\nコンテキストに機密データが残っています。/clear の実行を検討してください。")
-  echo "{\"decision\": \"block\", \"reason\": \"$REASON\"}"
-  exit 0
+  REASON="$(printf '機密情報リークの可能性:%s\nコンテキストに機密データが残っています。/clear の実行を検討してください。' "$WARNINGS")"
+  harness_block "$REASON"
 fi
 
 exit 0
